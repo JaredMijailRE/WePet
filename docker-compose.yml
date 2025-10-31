@@ -1,0 +1,16 @@
+services:
+  proxy:
+  gateway:
+    image: traefik:v3.1
+    container_name: traefik
+    command:
+      - "--api.dashboard=true"
+      - "--entrypoints.web.address=:80"
+      - "--entrypoints.websecure.address=:443"
+      - "--providers.docker=true"
+  group-managment:
+  pet-managment:
+  user-managment:
+  group-db:
+  pet-db:
+  user-db:
