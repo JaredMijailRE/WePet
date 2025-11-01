@@ -23,6 +23,13 @@ services:
     container_name: pet-managment
     restart: unless-stopped
   # user-managment:
-  # group-db:
+  group-db:
+    image: mongo:7.0.11
+    container_name: mongo-group
+    volumes:
+      - mongo_dataDB:/data/db
+    restart: unless-stopped
   # pet-db:
   # user-db:
+volumes:
+  mongo_dataDB:
