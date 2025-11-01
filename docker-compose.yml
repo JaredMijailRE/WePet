@@ -1,5 +1,5 @@
 services:
-  proxy:
+  # proxy:
   gateway:
     image: traefik:v3.1
     container_name: traefik
@@ -8,9 +8,21 @@ services:
       - "--entrypoints.web.address=:80"
       - "--entrypoints.websecure.address=:443"
       - "--providers.docker=true"
-  group-managment:
+      - "--providers.docker.exposedbydefault=false"
+    ports:
+      - "80:80"
+      - "443:443"
+      - "8080:8080"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+  # group-managment:
   pet-managment:
-  user-managment:
-  group-db:
-  pet-db:
-  user-db:
+    build:
+      context: ./PetManagment
+      dockerfile: Dockerfile
+    container_name: pet-managment
+    restart: unless-stopped
+  # user-managment:
+  # group-db:
+  # pet-db:
+  # user-db:
