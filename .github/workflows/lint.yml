@@ -2,30 +2,32 @@ name: Python Ruff Lint
 
 on:
   push:
-    branches: [ main]
+    branches: [main]
   pull_request:
-    branches: [ main]
+    branches: [main]
 
 jobs:
   lint:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        project:
+          - PetManagment/app
+          - GroupManagment/app
+    name: Lint ${{ matrix.project }}
 
     steps:
-
       - name: Checkout code
         uses: actions/checkout@v4
-
 
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.12'
+          cache: 'pip'
 
-      
       - name: Install Ruff
-        run: |
-          pip install ruff
+        run: pip install ruff
 
       - name: Run Ruff Lint
-        run: |
-          ruff check ./PetManagment/app
+        run: ruff check ./${{ matrix.project }}
