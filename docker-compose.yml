@@ -15,13 +15,25 @@ services:
       - "8080:8080"
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
-  # group-managment:
+
+
+  group-managment:
+    container_name: group-managment
+    build:
+      context: ./GroupManagment
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    depends_on:
+      - group-db 
+
+
   pet-managment:
+    container_name: pet-managment
     build:
       context: ./PetManagment
-      dockerfile: Dockerfile
-    container_name: pet-managment
     restart: unless-stopped
+
+
   # user-managment:
   group-db:
     image: mongo:7.0.11
