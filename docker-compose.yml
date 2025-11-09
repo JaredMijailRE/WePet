@@ -17,6 +17,7 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
 
 
+
   group-managment:
     container_name: group-managment
     build:
@@ -26,15 +27,29 @@ services:
     depends_on:
       - group-db 
 
-
   pet-managment:
     container_name: pet-managment
     build:
       context: ./PetManagment
+      dockerfile: Dockerfile
+    restart: unless-stopped
+
+  user-managment:
+    container_name: user-managment
+    build:
+      context: ./UserManagment
+      dockerfile: Dockerfile
+    restart: unless-stopped
+
+  sharing-service:
+    container_name: sharing-service
+    build:
+      context: ./SharingService
+      dockerfile: Dockerfile
     restart: unless-stopped
 
 
-  # user-managment:
+
   group-db:
     image: mongo:7.0.11
     container_name: mongo-group
@@ -43,5 +58,6 @@ services:
     restart: unless-stopped
   # pet-db:
   # user-db:
+  
 volumes:
   mongo_dataDB:
