@@ -25,7 +25,8 @@ services:
       dockerfile: Dockerfile
     restart: unless-stopped
     depends_on:
-      - group-db 
+      - group-dbMongo
+      - group-dbSQL
 
   pet-managment:
     container_name: pet-managment
@@ -33,6 +34,8 @@ services:
       context: ./PetManagment
       dockerfile: Dockerfile
     restart: unless-stopped
+    depends_on:
+      - pet-db
 
   user-managment:
     container_name: user-managment
@@ -40,6 +43,8 @@ services:
       context: ./UserManagment
       dockerfile: Dockerfile
     restart: unless-stopped
+    depends_on: 
+      - user-db
 
   sharing-service:
     container_name: sharing-service
@@ -50,14 +55,48 @@ services:
 
 
 
-  group-db:
-    image: mongo:7.0.11
-    container_name: mongo-group
+  group-dbMongo:
+    image: mvertes/alpine-mongo:4.0.6-1
+    container_name: group-dbMongo
     volumes:
       - mongo_dataDB:/data/db
     restart: unless-stopped
-  # pet-db:
-  # user-db:
-  
+
+  group-dbSQL:
+    image: postgres:17-alpine
+    container_name: postgres-group
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: admin
+      POSTGRES_DB: groupdb
+    volumes:
+      - postgres_group_data:/var/lib/postgresql/data
+    restart: unless-stopped
+
+  pet-db:
+    image: postgres:17-alpine
+    container_name: postgres-pet
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: admin
+      POSTGRES_DB: petdb
+    volumes:
+      - postgres_pet_data:/var/lib/postgresql/data
+    restart: unless-stopped
+
+  user-db:
+    image: postgres:17-alpine
+    container_name: postgres-user
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: admin
+      POSTGRES_DB: userdb
+    volumes:
+      - postgres_user_data:/var/lib/postgresql/data
+    restart: unless-stopped
+    
 volumes:
   mongo_dataDB:
+  postgres_group_data:
+  postgres_pet_data:
+  postgres_user_data:
