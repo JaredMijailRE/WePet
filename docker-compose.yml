@@ -16,8 +16,6 @@ services:
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
 
-
-
   group-managment:
     container_name: group-managment
     build:

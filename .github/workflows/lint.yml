@@ -14,6 +14,8 @@ jobs:
         project:
           - PetManagment/app
           - GroupManagment/app
+          - SharingService/app
+          - UserManagment/app
     name: Lint ${{ matrix.project }}
 
     steps:
