@@ -31,6 +31,8 @@ services:
     build:
       context: ./PetManagment
       dockerfile: Dockerfile
+    environment:
+      - DATABASE_URL=postgresql+psycopg2://admin:admin@pet-db:5432/petdb
     restart: unless-stopped
     depends_on:
       - pet-db
