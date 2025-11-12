@@ -40,6 +40,8 @@ services:
     build:
       context: ./UserManagment
       dockerfile: Dockerfile
+    environment:
+      - DATABASE_URL=postgresql+psycopg2://admin:admin@user-db:5432/userdb
     restart: unless-stopped
     depends_on: 
       - user-db
