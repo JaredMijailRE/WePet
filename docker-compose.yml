@@ -23,8 +23,7 @@ services:
       dockerfile: Dockerfile
     restart: unless-stopped
     depends_on:
-      - group-dbMongo
-      - group-dbSQL
+      - group-db
 
   pet-managment:
     container_name: pet-managment
@@ -61,14 +60,18 @@ services:
     image: rabbitmq:4.1.5-management-alpine
 
 
-  group-dbMongo:
-    image: mvertes/alpine-mongo:4.0.6-1
-    container_name: group-dbMongo
+  sharing_db:
+    image: postgres:17-alpine
+    container_name: postgres-sharing
+    environment:
+      - POSTGRES_USER: admin
+      - POSTGRES_PASSWORD: admin
+      - POSTGRES_DB: sharingdb
     volumes:
-      - mongo_dataDB:/data/db
+      - postgres_sharing_data:/var/lib/postgresql/data
     restart: unless-stopped
 
-  group-dbSQL:
+  group-db:
     image: postgres:17-alpine
     container_name: postgres-group
     environment:
@@ -102,7 +105,7 @@ services:
     restart: unless-stopped
 
 volumes:
-  mongo_dataDB:
+  postgres_sharing_data:
   postgres_group_data:
   postgres_pet_data:
   postgres_user_data:
