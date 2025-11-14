@@ -6,7 +6,7 @@ from sqlalchemy import Column, Enum, TIMESTAMP, DECIMAL
 from sqlalchemy.dialects.postgresql import UUID
 from .database import Base
 
-class EmotionalStatus(enum.Enum):
+class EmotionalStatus(str, enum.Enum):
     HAPPY = "happy"
     SAD = "sad"
     NERVOUS = "nervous"

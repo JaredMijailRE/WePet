@@ -7,7 +7,7 @@ from sqlalchemy.dialects.postgresql import UUID
 from .database import Base
 from sqlalchemy.orm import relationship
 
-class PetType(enum.Enum):
+class PetType(str, enum.Enum):
     CAT = "cat"
     DOG = "dog"
     DRAGON = "dragon"
