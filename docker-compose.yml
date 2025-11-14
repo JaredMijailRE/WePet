@@ -22,6 +22,8 @@ services:
       context: ./GroupManagment
       dockerfile: Dockerfile
     restart: unless-stopped
+    environment:
+      - DATABASE_URL=postgresql+psycopg2://admin:admin@group-db:5432/groupdb
     depends_on:
       - group-db
 
@@ -52,7 +54,11 @@ services:
     build:
       context: ./SharingService
       dockerfile: Dockerfile
+    environment:
+      - DATABASE_URL=postgresql+psycopg2://admin:admin@sharing_db:5432/sharingdb
     restart: unless-stopped
+    depends_on:
+      - sharing_db
 
 
   message-queue:
