@@ -1,7 +1,7 @@
 from sqlalchemy.orm import Session
 import uuid
 
-from .models import Location, EmotionalReport, EmotionalState
+from .models import Location, EmotionalReport, EmotionalStatus
 
 
 # -------------------------
@@ -42,8 +42,12 @@ def delete_location(db: Session, user_id: uuid.UUID):
 # EMOTIONAL REPORTS CRUD
 # -------------------------
 
-def create_emotional_report(db: Session, user_id: uuid.UUID, group_id: uuid.UUID, emotional_state: EmotionalState):
-    report = EmotionalReport(user_id=user_id, group_id=group_id, emotional_state=emotional_state)
+def create_emotional_report(db: Session, user_id: uuid.UUID, group_id: uuid.UUID, status_id: int):
+    emotional_status = db.query(EmotionalStatus).filter(EmotionalStatus.id == status_id).first()
+    if not emotional_status:
+        return None
+    
+    report = EmotionalReport(user_id=user_id, group_id=group_id, status_id=status_id)
 
     db.add(report)
     db.commit()
@@ -75,3 +79,30 @@ def delete_report(db: Session, report_id: uuid.UUID):
         db.delete(report)
         db.commit()
     return report
+
+# -------------------------
+# EMOTIONAL STATUS CRUD
+# -------------------------
+
+def create_emotional_status(db:Session, id:int, status:str):
+    e_status = EmotionalStatus(id=id, status=status)
+
+    db.add(e_status)
+    db.commit()
+    db.refresh(e_status)
+
+    return e_status
+
+def get_emotional_status_by_status(db:Session, status:str):
+    return (
+        db.query(EmotionalStatus)
+        .filter(EmotionalStatus.status == status)
+        .all()
+    )
+
+def delete_status(db:Session, status_id:int):
+    status = db.query(EmotionalStatus).filter(EmotionalStatus.id == status_id).first()
+    if status:
+        db.delete(status)
+        db.commit()
+    return status

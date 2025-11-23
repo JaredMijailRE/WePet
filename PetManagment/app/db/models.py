@@ -1,11 +1,10 @@
 import enum
 import uuid
 from datetime import datetime, timezone
-from sqlalchemy import Column, Integer, String, TIMESTAMP, DateTime, Boolean, ForeignKey
+from sqlalchemy import Column, Integer, String, TIMESTAMP
 from sqlalchemy import Enum
 from sqlalchemy.dialects.postgresql import UUID
 from .database import Base
-from sqlalchemy.orm import relationship
 
 class PetType(str, enum.Enum):
     CAT = "cat"
