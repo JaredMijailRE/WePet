@@ -70,9 +70,9 @@ services:
     image: postgres:17-alpine
     container_name: postgres-sharing
     environment:
-      - POSTGRES_USER: admin
-      - POSTGRES_PASSWORD: admin
-      - POSTGRES_DB: sharingdb
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: admin
+      POSTGRES_DB: sharingdb
     volumes:
       - postgres_sharing_data:/var/lib/postgresql/data
     restart: unless-stopped
