@@ -69,6 +69,9 @@ def get_group_member(db: Session, group_id: uuid.UUID, user_id: uuid.UUID) -> Gr
 def list_group_members(db: Session, group_id: uuid.UUID):
     return (db.query(GroupMember).filter(GroupMember.group_id == group_id).all())
 
+def list_member_groups(db: Session, user_id: uuid.UUID):
+    return (db.query(GroupMember).filter(GroupMember.user_id == user_id).all())
+
 def update_group_member(db: Session, group_id: uuid.UUID, user_id: uuid.UUID, *, role: Role | None = None, 
     is_sharing_location_with_group: bool | None = None, has_notifications_enabled: bool | None = None):
 
