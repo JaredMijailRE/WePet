@@ -12,6 +12,7 @@ const data = [
 
 const GroupsSearchTab = () => {
   const backgroundImage = require('../../assets/images/backgroundImage.jpeg');
+  const groupImage = require('../../assets/images/groupIcon.png');
   const [searchQuery, setSearchQuery] = useState('');
   const [filteredData, setFilteredData] = useState(data);
   const [isFocused, setIsFocused] = useState(false);
@@ -43,11 +44,19 @@ const GroupsSearchTab = () => {
       onPress={() => console.log('Botón presionado:', item.group_name)}
     >
       <View style={styles.listItemContainer}>
-        <Text style={{ color: "#ffa052", fontSize: 32, paddingBottom: 3}}>•</Text>
-        <View>
-
+        <Text style={{ color: "#9c76c2", fontSize: 32, paddingBottom: 3}}>•</Text>
+        <View style={styles.groupIconContainer}>
+          <Image 
+            source={groupImage} 
+            style={styles.groupIconImage}
+            resizeMode="contain" 
+          />
         </View>
-        <Text style={styles.buttonText}>{item.group_name}</Text>
+        <View>
+          <Text style={styles.buttonText}>{item.group_name}</Text>
+          <Text style={styles.buttonSubText}>notification</Text>
+        </View>
+        
       </View>
     </TouchableOpacity>
   )
@@ -169,9 +178,31 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     paddingHorizontal: 10,
   },
+  groupIconContainer: {
+    marginHorizontal: 10,
+    borderRadius: 2,
+    width: 30,  
+    height: 30,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  groupIconImage: {
+    top: 0, 
+    left: 0, 
+    bottom: 0, 
+    right: 0,
+    opacity: 1, 
+    width: '80%',
+    height: "80%"
+  },
   buttonText: {
     color: '#000',
     fontWeight: 'bold',
+    flex: 9,
+  },
+  buttonSubText: {
+    color: '#313131ff',
+    fontWeight: 'light',
   },
 });
 
