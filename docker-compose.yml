@@ -26,6 +26,10 @@ services:
       - DATABASE_URL=postgresql+psycopg2://admin:admin@group-db:5432/groupdb
     depends_on:
       - group-db
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.group-router.rule=PathPrefix(`/groups`)"
+      - "traefik.http.services.group-service.loadbalancer.server.port=80"
 
   pet-managment:
     container_name: pet-managment
@@ -37,6 +41,10 @@ services:
     restart: unless-stopped
     depends_on:
       - pet-db
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.pet-router.rule=PathPrefix(`/pet`)"
+      - "traefik.http.services.pet-service.loadbalancer.server.port=80"
 
   user-managment:
     container_name: user-managment
@@ -48,6 +56,10 @@ services:
     restart: unless-stopped
     depends_on: 
       - user-db
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.user-routers.rule=PathPrefix(`/user`)"
+      - "traefik.http.services.user-service.loadbalancer.server.port=80"
 
   sharing-service:
     container_name: sharing-service
@@ -59,6 +71,10 @@ services:
     restart: unless-stopped
     depends_on:
       - sharing_db
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.sharing-routers.rule=PathPrefix(`/sharing`)"
+      - "traefik.http.services.sharing-service.loadbalancer.server.port=80"
 
 
   message-queue:
