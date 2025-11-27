@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import FontAwesome6 from '@expo/vector-icons/FontAwesome6';
-import { View, TextInput, FlatList, Text, StyleSheet, Alert, TouchableOpacity, Platform, Image } from 'react-native';
+import { View, TextInput, FlatList, Text, StyleSheet, TouchableOpacity, Platform, Image, Modal } from 'react-native';
+import { useRouter } from 'expo-router';
 
 const data = [
   { group_id: '1', group_name: 'groupA' },
@@ -13,9 +14,18 @@ const data = [
 const GroupsSearchTab = () => {
   const backgroundImage = require('../../assets/images/backgroundImage.jpeg');
   const groupImage = require('../../assets/images/groupIcon.png');
+
   const [searchQuery, setSearchQuery] = useState('');
   const [filteredData, setFilteredData] = useState(data);
   const [isFocused, setIsFocused] = useState(false);
+  const [modalVisible, setModalVisible] = useState(false);
+
+  const router = useRouter();
+
+  interface GroupItem {
+    group_id: string; 
+    group_name: string;
+  }
 
   const handleSearch = (text:string) => {
     setSearchQuery(text);
@@ -29,14 +39,9 @@ const GroupsSearchTab = () => {
     setFilteredData(newData);
   };
 
-  const createGroup = () => {
-    Alert.alert('Custom Button Pressed!');
+  const joinGroup = () => {
+    setModalVisible(true)
   };
-
-  interface GroupItem {
-    group_id: string; 
-    group_name: string;
-  }
 
   const groupItem = ({ item }: { item: GroupItem }) => (
     <TouchableOpacity 
@@ -61,6 +66,14 @@ const GroupsSearchTab = () => {
     </TouchableOpacity>
   )
 
+  const handleJoin = () => {
+    setModalVisible(!modalVisible)
+  }
+
+  const handleCreate = () => {
+    setModalVisible(!modalVisible)
+  }
+
   return (
     <View style={styles.container}>
       <Image 
@@ -84,10 +97,49 @@ const GroupsSearchTab = () => {
         <FontAwesome6 name="magnifying-glass" size={18} color="black" style={styles.searchIcon}/>
         </View>
 
-        <TouchableOpacity style={styles.plusButton} onPress={createGroup}>
+        <TouchableOpacity style={styles.plusButton} onPress={joinGroup}>
           <FontAwesome6 name="plus" size={15} color="black" />
         </TouchableOpacity>
       </View>
+
+      <Modal
+        animationType="fade"
+        transparent={true}
+        visible={modalVisible}
+        onRequestClose={() => {
+          setModalVisible(!modalVisible);
+        }}
+      >
+        <View style={styles.joinGroupModalContainer}>
+          <View style={styles.joinGroupModal}>
+            <View style={{flexDirection: "row",borderBottomWidth: 1, borderBottomColor: '#ccc',}}>
+              <Text style={styles.joinGroupModalTitle}>Join a Group</Text>
+            </View>
+            <Text style={{ marginTop: 6 }}>Join a Group using the ID!</Text>
+            <TextInput
+              // style={[ styles.modalInput, Platform.OS === 'web' && { outlineStyle: 'none' as any } ]}
+              style={ styles.modalInput }
+              placeholder="Group ID"
+              value={searchQuery}
+              onChangeText={handleSearch}
+              // underlineColorAndroid="transparent"
+            />
+            <View style={{flexDirection: "row"}}>
+              <TouchableOpacity 
+              style={styles.modalCreateGroup} 
+              onPress={() => handleCreate()}
+              >
+                <Text style={{textAlign: 'center', color: '#9c76c2'}}>or create a group</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity style={styles.modalButton} onPress={() => handleJoin()}>
+                <Text style={{color: '#fff', fontWeight: 'bold'}}>OK</Text>
+              </TouchableOpacity>
+
+            </View>
+          </View>
+        </View>
+      </Modal>
       
       <FlatList
         data={filteredData}
@@ -204,6 +256,56 @@ const styles = StyleSheet.create({
     color: '#313131ff',
     fontWeight: 'light',
   },
+
+  joinGroupModalContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#00000020',
+  },
+  joinGroupModal: {
+    padding: 15,
+    backgroundColor: '#fff',
+    borderRadius: 20,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 5,
+  },
+  joinGroupModalTitle: {
+    color: '#000',
+    fontWeight: 'bold',
+    flex: 2,
+    marginRight: 150,
+    marginBottom: 6,
+  },
+  modalInput: {
+    marginVertical: 6,
+    height: 40,
+    flex: 1,
+  },
+  modalButton: {
+    backgroundColor: "#9c76c2",
+    borderRadius: 10,
+    padding: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+    flex: 2,
+    marginLeft: 5,
+  },
+  modalCreateGroup: {
+    backgroundColor: "#fff",
+    borderRadius: 10,
+    padding: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+    flex: 2,
+    marginLeft: 5,
+  }
 });
 
 export default GroupsSearchTab;
