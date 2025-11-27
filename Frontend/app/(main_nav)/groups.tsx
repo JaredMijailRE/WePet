@@ -279,14 +279,12 @@ const styles = StyleSheet.create({
   joinGroupModalTitle: {
     color: '#000',
     fontWeight: 'bold',
-    flex: 2,
     marginRight: 150,
     marginBottom: 6,
   },
   modalInput: {
     marginVertical: 6,
     height: 40,
-    flex: 1,
   },
   modalButton: {
     backgroundColor: "#9c76c2",
