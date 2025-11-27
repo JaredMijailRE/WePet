@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { StyleSheet, TextInput, View, Pressable, Image } from 'react-native';
-import { Link } from 'expo-router';
+import { Link, useRouter } from 'expo-router';
 
 import ParallaxScrollView from '@/components/parallax-scroll-view';
 import { ThemedText } from '@/components/themed-text';
@@ -9,6 +9,7 @@ import { ThemedView } from '@/components/themed-view';
 export default function SignInScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const router = useRouter();
 
   return (
     <ParallaxScrollView
@@ -50,10 +51,19 @@ export default function SignInScreen() {
         />
 
         <View style={styles.rowButtons}>
-          <Pressable style={[styles.button, styles.buttonLight]} onPress={() => {}}>
+          <Pressable
+            style={[styles.button, styles.buttonLight]}
+            onPress={() => router.push('/signup')}>
             <ThemedText style={styles.buttonText}>Sign Up</ThemedText>
           </Pressable>
-          <Pressable style={[styles.button, styles.buttonPrimary]} onPress={() => {}}>
+          <Pressable 
+            style={[styles.button, styles.buttonPrimary]} 
+            onPress={() => {
+              // TODO: Implement backend authentication
+              console.log('Log In:', { email, password });
+              // Navigate to groups after successful login
+              router.replace('/(main_nav)/groups');
+            }}>
             <ThemedText style={[styles.buttonText, { color: '#fff' }]}>Log In</ThemedText>
           </Pressable>
         </View>
