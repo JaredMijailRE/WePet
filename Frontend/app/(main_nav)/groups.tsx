@@ -301,7 +301,7 @@ const styles = StyleSheet.create({
     padding: 10,
     alignItems: 'center',
     justifyContent: 'center',
-    flex: 2,
+    flex: 4,
     marginLeft: 5,
   }
 });
