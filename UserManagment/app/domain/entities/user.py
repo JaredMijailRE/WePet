@@ -1,7 +1,10 @@
+from datetime import date
 class User:
-    def __init__(self, id, hashed_password) -> None:
+    def __init__(self, id, username, email, password_hash, birth_date, is_active=True) -> None:
         self.id = id
-        self.hashed_password = hashed_password
+        self.username = username
+        self.email = email
+        self.password_hash = password_hash
+        self.birth_date = birth_date
+        self.is_active = is_active
 
-    def verify_password(self, hash_input_password: str) -> bool:
-        return self.hashed_password == hash_input_password

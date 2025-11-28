@@ -8,6 +8,13 @@ class UserRepository(ABC):
         self.dbSession = dbSession
 
     @abstractmethod
-    async def find_by_username(self, username) -> User:
+    def find_by_username(self, username) -> User | None:
         pass
     
+    @abstractmethod
+    def find_by_email(self, email: str) -> User | None:
+        pass
+
+    @abstractmethod
+    def save(self, user: User) -> User:
+        pass
