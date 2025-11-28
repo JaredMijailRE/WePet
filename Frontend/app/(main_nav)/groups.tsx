@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import FontAwesome6 from '@expo/vector-icons/FontAwesome6';
 import { View, TextInput, FlatList, Text, StyleSheet, TouchableOpacity, Platform, Image, Modal } from 'react-native';
-import { useRouter } from 'expo-router';
+import { Redirect, useRouter } from 'expo-router';
+import { Route } from 'expo-router/build/Route';
 
 const data = [
   { group_id: '1', group_name: 'groupA' },
@@ -129,7 +130,7 @@ const GroupsSearchTab = () => {
               style={styles.modalCreateGroup} 
               onPress={() => handleCreate()}
               >
-                <Text style={{textAlign: 'center', color: '#9c76c2'}}>or create a group</Text>
+                <Text style={{textAlign: 'center', color: '#9c76c2'}}onPress={() => {handleJoin(); router.push("/create_group");}}>or create a group</Text>
               </TouchableOpacity>
 
               <TouchableOpacity style={styles.modalButton} onPress={() => handleJoin()}>
