@@ -1,8 +1,8 @@
 from fastapi import APIRouter, Depends
 from application.dto.auth_dto import LoginDTO
-from internal.adapter.db.database import get_db
-from internal.application.usecases.user_login import LoginUser
-from internal.adapter.db.user_repository_sql import SQLUserRepository
+from app.adapter.db.database import get_db
+from app.application.usecases.user_login import LoginUser
+from app.adapter.db.user_repository_sql import SQLUserRepository
 from domain.services.token_service import JWTTokenGenerator
 
 

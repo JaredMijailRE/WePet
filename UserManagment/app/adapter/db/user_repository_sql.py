@@ -1,8 +1,8 @@
 from sqlalchemy.orm import Session
 from domain.repositories.user_repository import UserRepository
 from domain.entities.user import User
-from internal.adapter.db.crud import get_user_by_username
-from internal.adapter.db.database import get_db
+from app.adapter.db.crud import get_user_by_username
+from app.adapter.db.database import get_db
 
 class SQLUserRepository(UserRepository):
 
