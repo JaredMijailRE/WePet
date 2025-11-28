@@ -1,13 +1,9 @@
 from abc import ABC, abstractmethod
-from domain.entities.user import User
+import uuid
 
 class TokenGenRepository(ABC):
 
-    def __init__(self, secret: str) -> None:
-        super().__init__()
-        self.secret = secret
-
     @abstractmethod
-    async def generateToken(self, message) -> str:
+    def generateToken(self, user_id: uuid.UUID) -> str:
         pass
     
