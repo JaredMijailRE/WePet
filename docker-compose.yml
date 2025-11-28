@@ -1,7 +1,7 @@
 services:
   # proxy:
   gateway:
-    image: traefik:v3.1
+    image: traefik:v3.6.2
     container_name: traefik
     command:
       - "--api.dashboard=true"
@@ -60,6 +60,8 @@ services:
       - "traefik.enable=true"
       - "traefik.http.routers.user-routers.rule=PathPrefix(`/user`)"
       - "traefik.http.services.user-service.loadbalancer.server.port=80"
+      - "traefik.http.middlewares.strip-user.stripprefix.prefixes=/user"
+      - "traefik.http.routers.user-routers.middlewares=strip-user"
 
   sharing-service:
     container_name: sharing-service
