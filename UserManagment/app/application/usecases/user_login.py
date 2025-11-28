@@ -1,5 +1,4 @@
 from fastapi import HTTPException
-from domain.entities.user import User
 from domain.repositories.user_repository import UserRepository
 from domain.repositories.token_generator_repository import TokenGenRepository
 from app.adapter.security import verify_password
