@@ -28,7 +28,7 @@ class User(Base):
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, unique=True, nullable=False)
     username = Column(String(50), nullable=False, unique=True, index=True)
     email = Column(String(50), nullable=False, unique=True, index=True)
-    password_hash = Column(String(50), nullable=False)
+    password_hash = Column(String(255), nullable=False)
     birth_date = Column(Date, nullable=False)
     current_emotional_status = Column(Enum(EmotionalStatus), nullable=True)
     its_sharing_location = Column(Boolean, default=False)
