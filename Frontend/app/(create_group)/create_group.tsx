@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import FontAwesome6 from '@expo/vector-icons/FontAwesome6';
 import { View, TextInput, FlatList, Text, StyleSheet, Alert, TouchableOpacity, Platform, Image, Pressable } from 'react-native';
 
+import { router } from "expo-router";
 export default function CreateGroupPage() {
 
     const [selectedImage, setSelectedImage] = useState(require("../../assets/images/image_dog.png"));
@@ -55,7 +56,7 @@ export default function CreateGroupPage() {
 
             
             <View style = {styles.buttonContainer}>
-            <Pressable style = {[styles.button, {backgroundColor: '#9c76c2'}]} onPress = {() => alert('You pressed a button')}>
+            <Pressable style = {[styles.button, {backgroundColor: '#9c76c2'}]} onPress = {() => {router.push("/(main_nav)/groups");}}>
                 <Text style = {styles.buttonLabel}>Exit</Text>
             </Pressable>
             <Pressable style = {[styles.button, {backgroundColor: '#9c76c2'}]} onPress = {() => alert('You pressed a button')}>
