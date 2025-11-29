@@ -25,4 +25,6 @@ class Pet(Base):
     hygiene_level = Column(Integer, nullable=False, default=100)
     health_level = Column(Integer, nullable=False, default=100)
     happiness_level = Column(Integer, nullable=False, default=100)
+    level = Column(Integer, nullable=False, default=1)
+    xp = Column(Integer, nullable=False, default=0)
     last_updated = Column(TIMESTAMP(timezone=True), default=datetime.now(timezone.utc), onupdate=datetime.now(timezone.utc))

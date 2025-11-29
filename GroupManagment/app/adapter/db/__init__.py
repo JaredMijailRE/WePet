@@ -1,7 +1,7 @@
 from sqlalchemy.orm import Session
 from app.domain.repositories.group_repository import GroupRepository
 from app.domain.entities.group import Group
-from app.adapter.db.models import Group as GroupModel, GroupMember, Role
+from app.adapter.db.models import Group as GroupModel, GroupMember
 import uuid
 
 class SQLGroupRepository(GroupRepository):
