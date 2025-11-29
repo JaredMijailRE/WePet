@@ -7,6 +7,9 @@ requires-python = ">=3.12"
 dependencies = [
     "fastapi>=0.120.4",
     "psycopg2-binary>=2.9.11",
+    "pydantic>=2.12.3",
+    "pyjwt>=2.10.1",
     "sqlalchemy>=2.0.44",
+    "uuid6>=2025.0.1",
     "uvicorn>=0.38.0",
 ]
