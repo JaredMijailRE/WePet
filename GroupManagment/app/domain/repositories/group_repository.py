@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from app.domain.entities.group import Group
-from app.domain.entities.group import Activity
+from app.domain.entities.activity import Activity
 import uuid
 from typing import List
 
