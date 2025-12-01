@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import FontAwesome6 from '@expo/vector-icons/FontAwesome6';
 import { View, TextInput, FlatList, Text, StyleSheet, TouchableOpacity, Platform, Image, Modal } from 'react-native';
 import { Redirect, useRouter } from 'expo-router';
-import { Route } from 'expo-router/build/Route';
 
 const data = [
   { group_id: '1', group_name: 'groupA' },
@@ -47,7 +46,7 @@ const GroupsSearchTab = () => {
   const groupItem = ({ item }: { item: GroupItem }) => (
     <TouchableOpacity 
       style={styles.button}
-      onPress={() => console.log('Botón presionado:', item.group_name)}
+      onPress={() => handleGroup()}
     >
       <View style={styles.listItemContainer}>
         <Text style={{ color: "#9c76c2", fontSize: 32, paddingBottom: 3}}>•</Text>
@@ -69,10 +68,16 @@ const GroupsSearchTab = () => {
 
   const handleJoin = () => {
     setModalVisible(!modalVisible)
+    
   }
 
   const handleCreate = () => {
     setModalVisible(!modalVisible)
+    router.push("/(create_group)/create_group")
+  }
+
+  const handleGroup = () => {
+    router.push("/(create_group)/group-config")
   }
 
   return (
@@ -80,7 +85,6 @@ const GroupsSearchTab = () => {
       <Image 
         source={backgroundImage} 
         style={styles.backgroundImage}
-        // Usa 'contain' o 'center' si no quieres que se estire
         resizeMode="contain" 
       />
 
@@ -130,7 +134,7 @@ const GroupsSearchTab = () => {
               style={styles.modalCreateGroup} 
               onPress={() => handleCreate()}
               >
-                <Text style={{textAlign: 'center', color: '#9c76c2'}}onPress={() => {handleJoin(); router.push("/create_group");}}>or create a group</Text>
+                <Text style={{textAlign: 'center', color: '#9c76c2'}} onPress={() => {handleCreate();}}>or create a group</Text>
               </TouchableOpacity>
 
               <TouchableOpacity style={styles.modalButton} onPress={() => handleJoin()}>
@@ -155,14 +159,11 @@ const GroupsSearchTab = () => {
 const styles = StyleSheet.create({
   backgroundImage: {
     position: 'absolute', 
-    // La centra respecto al contenedor padre
     top: 0, 
     left: 0, 
     bottom: 0, 
     right: 0,
-    // La opacidad la hace menos intrusiva
     opacity: 0.3, 
-    // Ajusta el tamaño de la imagen según tus necesidades:
     width: '100%', 
     height: '100%',
   },

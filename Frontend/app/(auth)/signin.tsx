@@ -13,7 +13,7 @@ export default function SignInScreen() {
 
   return (
     <ParallaxScrollView
-      headerBackgroundColor={{ light: '#ffffff', dark: '#000000' }}
+      headerBackgroundColor={{ light: '#ffffff', dark: '#fff' }}
       headerImage={
         <View style={styles.headerImageContainer}>
           <Image source={require('@/assets/images/figma_360.png')} style={styles.logo} />
