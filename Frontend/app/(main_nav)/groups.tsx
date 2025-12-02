@@ -47,7 +47,7 @@ const GroupsSearchTab = () => {
   const groupItem = ({ item }: { item: GroupItem }) => (
     <TouchableOpacity 
       style={styles.button}
-      onPress={() => console.log('Botón presionado:', item.group_name)}
+      onPress={() => router.push(`/pet_service/pet?groupId=${item.group_id}`)}
     >
       <View style={styles.listItemContainer}>
         <Text style={{ color: "#9c76c2", fontSize: 32, paddingBottom: 3}}>•</Text>
