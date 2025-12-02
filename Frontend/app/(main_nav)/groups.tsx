@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import FontAwesome6 from '@expo/vector-icons/FontAwesome6';
 import { View, TextInput, FlatList, Text, StyleSheet, TouchableOpacity, Platform, Image, Modal } from 'react-native';
-import { Redirect, useRouter } from 'expo-router';
+import { useRouter } from 'expo-router';
+import CustomSearchBar from "@/components/ui/searchbar";
 
 const data = [
   { group_id: '1', group_name: 'groupA' },
@@ -17,7 +18,6 @@ const GroupsSearchTab = () => {
 
   const [searchQuery, setSearchQuery] = useState('');
   const [filteredData, setFilteredData] = useState(data);
-  const [isFocused, setIsFocused] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
 
   const router = useRouter();
@@ -89,17 +89,12 @@ const GroupsSearchTab = () => {
       />
 
       <View style={styles.searchAddContainer}>
-        <View style={[styles.searchContainer, isFocused && styles.searchContainerFocused]}>
-        <TextInput
-          style={[ styles.searchInput, Platform.OS === 'web' && { outlineStyle: 'none' as any } ]}
-          placeholder="Search..."
-          value={searchQuery}
-          onChangeText={handleSearch}
-          onFocus={() => setIsFocused(true)} 
-          onBlur={() => setIsFocused(false)} 
-          underlineColorAndroid="transparent"
-        />
-        <FontAwesome6 name="magnifying-glass" size={18} color="black" style={styles.searchIcon}/>
+        <View style={{ flex: 9 }}>
+          <CustomSearchBar
+            placeholder="Search..."
+            searchQuery={searchQuery}
+            handleSearch={handleSearch}
+          />
         </View>
 
         <TouchableOpacity style={styles.plusButton} onPress={joinGroup}>
@@ -134,7 +129,7 @@ const GroupsSearchTab = () => {
               style={styles.modalCreateGroup} 
               onPress={() => handleCreate()}
               >
-                <Text style={{textAlign: 'center', color: '#9c76c2'}} onPress={() => {handleCreate();}}>or create a group</Text>
+                <Text style={{textAlign: 'center', color: '#9c76c2'}}>or create a group</Text>
               </TouchableOpacity>
 
               <TouchableOpacity style={styles.modalButton} onPress={() => handleJoin()}>
@@ -179,33 +174,6 @@ const styles = StyleSheet.create({
   searchAddContainer: {
     flexDirection: 'row',
     marginHorizontal: 20,
-  },
-  searchContainer: {
-    flex: 9,
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderColor: 'gray',
-    borderWidth: 1,
-    borderRadius: 20,
-    marginTop: 5,
-    marginBottom: 15,
-    paddingHorizontal: 5,
-  },
-  searchContainerFocused: {
-    borderColor: '#b300ffff', 
-    borderWidth: 2,
-    marginTop: 4,
-    marginBottom: 14,
-    paddingHorizontal: 4,
-  },
-  searchInput: {
-    height: 40,
-    borderRadius: 20,
-    paddingHorizontal: 10,
-    flex: 1,
-  },
-  searchIcon: {
-    marginRight: 10,
   },
 
   plusButton: {

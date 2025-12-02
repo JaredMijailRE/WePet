@@ -1,16 +1,17 @@
 import { View, StyleSheet, FlatList, Image } from "react-native";
 import { useState } from "react";
 import CustomSearchBar from "@/components/ui/searchbar";
-import ActivityCards, { getEstadoVisual } from "@/components/ui/activitycard";
+import ActivityCards from "@/components/ui/activitycard";
+import ActivityModal from "@/components/ui/activity-modal";
 
 const data = [
-  { title: "Activity 1", group: "Group 1", exp: 10, description: "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.", end_date: "some date", state: "completed" },
-  { title: "Activity 2", group: "Group 2", exp: 10, description: "description 2", end_date: "some date", state: "inprogress" },
-  { title: "Activity 3", group: "Group 2", exp: 10, description: "description 3", end_date: "some date", state: "expired" },
-  { title: "Activity 4", group: "Group 1", exp: 10, description: "description 4", end_date: "some date", state: "completed" },
+  { title: "Activity 1", group: "Group 1", exp: 10, description: "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.", end_date: "02-12-2025", state: "completed" },
+  { title: "Activity 2", group: "Group 2", exp: 10, description: "description 2", end_date: "11-12-2025", state: "active" },
+  { title: "Activity 3", group: "Group 2", exp: 10, description: "description 3", end_date: "03-12-2025", state: "expired" },
+  { title: "Activity 4", group: "Group 1", exp: 10, description: "description 4", end_date: "05-12-2025", state: "completed" },
 ]
 
-interface ActivityItem {
+export interface ActivityItem {
   title:string,
   group:string,
   exp: number,
@@ -22,8 +23,10 @@ interface ActivityItem {
 export default function Index() {
   const backgroundImage = require('../../assets/images/backgroundImage.jpeg');
 
-  const [searchQuery, setSearchQuery] = useState('');
-  const [filteredData, setFilteredData] = useState(data);
+  const [searchQuery,      setSearchQuery]      = useState('');
+  const [filteredData,     setFilteredData]     = useState(data);
+  const [selectedActivity, setSelectedActivity] = useState<ActivityItem | null>(null);
+  const [modalVisible,     setModalVisible]     = useState(false);
 
   const handleSearch = (text:string) => {
     setSearchQuery(text);
@@ -38,19 +41,19 @@ export default function Index() {
 
   const activityCard = ({ item }: { item: ActivityItem }) => (
     <ActivityCards
-    title={item.title}
-    group={item.group}
-    exp={item.exp}
-    description={item.description}
-    end_date={item.end_date}
-    state={getEstadoVisual(item.state)}
-
-    handlePress={handleActivityPress}
+    item={item}
+    handlePress={() => handleActivityPress(item)}
     />
   );
 
-  const handleActivityPress = () => {
-    console.log("Go to activity");
+  const handleActivityPress = (item: ActivityItem) => {
+    setSelectedActivity(item)
+    setModalVisible(true)
+  }
+
+  const handleUpdateActivity = (item: ActivityItem) => {
+    console.log("update the activity!!!")
+    setModalVisible(false)
   }
 
   return (
@@ -76,6 +79,15 @@ export default function Index() {
         renderItem={ activityCard }
       />
 
+      {modalVisible && selectedActivity && (
+        <ActivityModal
+          activity={selectedActivity} 
+          visible={modalVisible}
+          onClose={() => setModalVisible(false)}
+          onUpdate={() => handleUpdateActivity(selectedActivity)} 
+        />
+      )}
+
     </View>
   );
 }
@@ -97,6 +109,4 @@ const styles = StyleSheet.create({
     width: '100%', 
     height: '100%',
   },
-
-
 })
