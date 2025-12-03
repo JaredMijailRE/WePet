@@ -19,14 +19,13 @@ const ActivityModal = ({ activity, visible, onClose, onUpdate }: ModalBaseProps)
         visible={visible}
         onRequestClose={onClose} 
         >
-
         <TouchableWithoutFeedback onPress={onClose}>
         <View style={styles.mainContainer}>
             
             <TouchableWithoutFeedback>
             <View style={styles.modalView}>
                 
-               <View style={{ flexDirection: 'row' }}>
+               <View style={{ flexDirection: 'row', marginBottom: 10 }}>
                     <View style={{ flex: 7 }}>
                     <Text style={{ color: '#000', fontWeight: 'bold'}}>
                         {activity.title}
@@ -45,12 +44,11 @@ const ActivityModal = ({ activity, visible, onClose, onUpdate }: ModalBaseProps)
                     </Text>    
                     </View>
                 </View>
-
-          
-                <ScrollView style={{ marginTop: 10 }}>
-                <Text style={{ color: '#595959', fontSize: 12 }}>
-                    {activity.description}
-                </Text> 
+            
+                <ScrollView>
+                    <Text style={{ color: '#595959', fontSize: 12 }}>
+                        {activity.description}
+                    </Text> 
                 </ScrollView>
                 
                 {!isFinished && (
@@ -88,7 +86,7 @@ const ActivityModal = ({ activity, visible, onClose, onUpdate }: ModalBaseProps)
             </View>
             </TouchableWithoutFeedback>
             
-            </View>
+        </View>
         </TouchableWithoutFeedback>
         </Modal>
     );

@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
-import FontAwesome6 from '@expo/vector-icons/FontAwesome6';
-import { View, TextInput, FlatList, Text, StyleSheet, TouchableOpacity, Platform, Image, Modal } from 'react-native';
+import { View, TextInput, FlatList, Text, StyleSheet, TouchableOpacity, Image, Modal, ScrollView, Pressable } from 'react-native';
 import { useRouter } from 'expo-router';
 import CustomSearchBar from "@/components/ui/searchbar";
 
@@ -68,7 +67,7 @@ const GroupsSearchTab = () => {
 
   const handleJoin = () => {
     setModalVisible(!modalVisible)
-    
+    console.log("Make the user a member!!!")
   }
 
   const handleCreate = () => {
@@ -87,20 +86,20 @@ const GroupsSearchTab = () => {
         style={styles.backgroundImage}
         resizeMode="contain" 
       />
-
-      <View style={styles.searchAddContainer}>
-        <View style={{ flex: 9 }}>
-          <CustomSearchBar
+      
+      <CustomSearchBar
             placeholder="Search..."
             searchQuery={searchQuery}
             handleSearch={handleSearch}
-          />
-        </View>
+            onAdd={joinGroup}
+      />
 
-        <TouchableOpacity style={styles.plusButton} onPress={joinGroup}>
-          <FontAwesome6 name="plus" size={15} color="black" />
-        </TouchableOpacity>
-      </View>
+      <FlatList
+        data={filteredData}
+        keyExtractor={item => item.group_id}
+        renderItem={ groupItem }
+        showsVerticalScrollIndicator={false}
+      />
 
       <Modal
         animationType="fade"
@@ -110,7 +109,7 @@ const GroupsSearchTab = () => {
           setModalVisible(!modalVisible);
         }}
       >
-        <View style={styles.joinGroupModalContainer}>
+        <Pressable onPress={() => setModalVisible(false)} style={styles.joinGroupModalContainer}>
           <View style={styles.joinGroupModal}>
             <View style={{flexDirection: "row",borderBottomWidth: 1, borderBottomColor: '#ccc',}}>
               <Text style={styles.joinGroupModalTitle}>Join a Group</Text>
@@ -138,14 +137,8 @@ const GroupsSearchTab = () => {
 
             </View>
           </View>
-        </View>
+        </Pressable>
       </Modal>
-      
-      <FlatList
-        data={filteredData}
-        keyExtractor={item => item.group_id}
-        renderItem={ groupItem }
-      />
 
     </View>
   );
@@ -166,35 +159,14 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     paddingTop: 30,
-    paddingHorizontal: 0,
+    paddingHorizontal: 20,
     backgroundColor: '#fff',
     position: 'relative',
-  },
-
-  searchAddContainer: {
-    flexDirection: 'row',
-    marginHorizontal: 20,
-  },
-
-  plusButton: {
-    backgroundColor: '#fff',
-    padding: 1,
-    margin: 5,
-    marginBottom: 20,
-    borderRadius: 20,
-    alignItems: 'center',
-    justifyContent: 'center',
-    flex: 1,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.3,
-    shadowRadius: 4,
   },
 
   listItemContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginHorizontal: 20,
   },
   button: {
     paddingVertical: 10,

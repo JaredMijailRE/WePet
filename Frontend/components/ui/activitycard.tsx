@@ -37,7 +37,7 @@ const ActivityCards = ({ item, handlePress }: ActivityCardsProps) => {
         >
 
         <View style={{ flexDirection: 'row' }}>
-            <View style={{ flex: 7 }}>
+            <View style={{ flex: 1 }}>
             <Text style={{ color: colors.text, fontWeight: 'bold'}}>
                 {item.title}
             </Text>
@@ -46,7 +46,7 @@ const ActivityCards = ({ item, handlePress }: ActivityCardsProps) => {
             </Text>
             </View>
 
-            <View style={{ flex: 2, alignItems: 'flex-end' }}>
+            <View style={{ flex: 1, alignItems: 'flex-end' }}>
             <Text style={{ color: colors.text, fontWeight: 'bold'}}>
                 {item.end_date}
             </Text>
