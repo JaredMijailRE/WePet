@@ -55,7 +55,6 @@ const CreateActivityModal = ({ visible, onClose, onSubmit }: CreateActivityModal
 
     const handleSubmit = () => {
         onSubmit(formData);
-        onClose();
         setFormData({ group: '-', title: '', description: '', deadline: '' });
         setShow(false);
     };
@@ -77,7 +76,7 @@ const CreateActivityModal = ({ visible, onClose, onSubmit }: CreateActivityModal
         
                 <Text style={styles.title}>Create a New Activity!</Text>
 
-                <View style={{ flexDirection: 'row' }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                 <Text style={styles.label}>Select a Group:</Text>
                 <Picker selectedValue={selectedGroup}
                     onValueChange={(itemValue, itemIndex) => setSelectedGroup(itemValue)}
@@ -89,7 +88,7 @@ const CreateActivityModal = ({ visible, onClose, onSubmit }: CreateActivityModal
                 </Picker>
                 </View>
 
-                <View style={{ flexDirection: 'row', marginBottom: 5 }}>
+                <View style={{ flexDirection: 'row', marginBottom: 5, alignItems: 'center' }}>
                 <Text style={styles.label}>Title:</Text>
                 <TextInput
                     style={styles.titleInput}
@@ -128,7 +127,7 @@ const CreateActivityModal = ({ visible, onClose, onSubmit }: CreateActivityModal
                     <Text style={{textAlign: 'center', color: '#9c76c2'}}>cancel</Text>
                     </TouchableOpacity>
     
-                    <TouchableOpacity style={styles.okButton} onPress={() => handleSubmit}>
+                    <TouchableOpacity style={styles.okButton} onPress={() => handleSubmit()}>
                     <Text style={{color: '#fff', fontWeight: 'bold'}}>OK</Text>
                     </TouchableOpacity>
                 </View>
@@ -159,7 +158,6 @@ const styles = StyleSheet.create({
         borderRadius: 8,
         padding: 15,
         width: '80%',
-        maxHeight: '50%',
 
         shadowColor: '#595959',
         shadowOffset: { width: 0, height: 2 },
@@ -172,7 +170,6 @@ const styles = StyleSheet.create({
         fontSize: 14,
         fontWeight: 'bold',
         marginBottom: 15,
-        width: '100%',
         textAlign: 'center',
         color: '#444'
     },
@@ -191,17 +188,14 @@ const styles = StyleSheet.create({
         borderColor: '#ccc',
         borderWidth: 1,
         fontSize: 13,
-        padding: 5,
     },
     titleInput: {
-        width: '100%',
         borderBottomWidth: 1,
         borderBottomColor: '#ccc',
-        marginTop: 6,
         fontSize: 14,
+        flex: 1,
     },
     descriptionInput: {
-        width: '100%',
         borderWidth: 1,
         borderColor: '#ccc',
         borderRadius: 5,

@@ -54,6 +54,11 @@ export default function Index() {
     setNewActivityModalVisible(true)
   }
 
+  const createActivity = (formData: any) => {
+    console.log("create Activity DTO")
+    setNewActivityModalVisible(false)
+  }
+
   const activityCard = ({ item }: { item: ActivityItem }) => (
     <ActivityCards
     item={item}
@@ -105,7 +110,7 @@ export default function Index() {
       <NewActivityModal
         visible={newActivityModalVisible}
         onClose={() => setNewActivityModalVisible(false)}
-        onSubmit={() => {}}
+        onSubmit={createActivity}
       />
 
     </View>
