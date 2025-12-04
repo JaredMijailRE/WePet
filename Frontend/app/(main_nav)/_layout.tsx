@@ -58,6 +58,20 @@ export default function TabLayout() {
                     <Ionicons name={focused ? 'information-circle' : 'information-circle-outline'} color={color} size={24} />
                 )
             }} />
+
+            <Tabs.Screen
+            name="mood"
+            options={{
+                title: 'Mood',
+                tabBarIcon: ({ color, size, focused }) => (
+                <Ionicons
+                    name={focused ? 'happy' : 'happy-outline'}
+                    size={size}
+                    color={color}
+                />
+                ),
+            }}
+            />
         </Tabs>
     )
 }
