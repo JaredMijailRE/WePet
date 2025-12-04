@@ -46,7 +46,7 @@ const ActivityModal = ({ activity, visible, onClose, onUpdate }: ModalBaseProps)
                 </View>
             
                 <ScrollView>
-                    <Text style={{ color: '#595959', fontSize: 12 }}>
+                    <Text style={{ color: '#595959', fontSize: 12 } }>
                         {activity.description}
                     </Text> 
                 </ScrollView>
