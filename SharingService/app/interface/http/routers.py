@@ -11,7 +11,7 @@ from app.adapter.auth.dependencies import get_current_user_id
 router = APIRouter()
 
 # Endpoint para REPORTAR (POST)
-@router.post("/mood", response_model=EmotionResponseDTO)
+@router.post("/mood", response_model=List[EmotionResponseDTO])
 def register_mood(
     data: CreateEmotionDTO,
     user_id: str = Depends(get_current_user_id),
