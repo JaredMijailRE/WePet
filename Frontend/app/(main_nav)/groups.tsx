@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
 import { View, TextInput, FlatList, Text, StyleSheet, TouchableOpacity, Image, Modal, Pressable } from 'react-native';
 import { useRouter } from 'expo-router';
+
 import CustomSearchBar from "@/components/ui/searchbar";
+import { useGroups } from '@/hooks';
 
 const data = [
   { group_id: '1', group_name: 'groupA' },

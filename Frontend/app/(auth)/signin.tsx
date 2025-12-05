@@ -6,10 +6,14 @@ import ParallaxScrollView from '@/components/parallax-scroll-view';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 
+import { useAuth } from '@/hooks';
+
 export default function SignInScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const router = useRouter();
+
+  const { login, loading, error } = useAuth();
 
   return (
     <ParallaxScrollView
@@ -58,11 +62,20 @@ export default function SignInScreen() {
           </Pressable>
           <Pressable 
             style={[styles.button, styles.buttonPrimary]} 
-            onPress={() => {
-              // TODO: Implement backend authentication
-              console.log('Log In:', { email, password });
-              // Navigate to groups after successful login
-              router.replace('/(main_nav)/groups');
+            onPress={ async () => {
+              try {
+                const result = await login({
+                  username: email,
+                  password: password
+                });
+
+                // Token automatically stored, user is now logged in
+                console.log('Login successful:', result);
+                router.replace('/(main_nav)/groups');
+
+              } catch (err) {
+                console.error('Login failed:', err);
+              }
             }}>
             <ThemedText style={[styles.buttonText, { color: '#fff' }]}>Log In</ThemedText>
           </Pressable>

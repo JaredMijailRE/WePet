@@ -58,3 +58,4 @@ class ActivityResponseDTO(BaseModel):
     xp_reward: int
     status: ActivityStatus
     created_at: datetime
+
