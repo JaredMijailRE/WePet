@@ -14,7 +14,8 @@ def seed_emotions():
         emotions = [
             "happy", "excited", "calm", "tired",
             "proud", "jealous", "worried", "sad",
-            "surprised", "scared", "shy", "angry"
+            "surprised", "scared", "shy", "angry",
+            "silly", "bored", "loved", "confused"
         ]
         for emotion_name in emotions:
             exists = db.query(models.EmotionalStatus).filter_by(name=emotion_name).first()
