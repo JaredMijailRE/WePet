@@ -5,22 +5,6 @@ from sqlalchemy import Column, String, Date, Boolean, TIMESTAMP
 from sqlalchemy.dialects.postgresql import UUID
 from .database import Base
 
-class EmotionalStatus(str, enum.Enum):
-    HAPPY = "happy"
-    SAD = "sad"
-    NERVOUS = "nervous"
-    ANXIOUS = "anxious"
-
-    CALM = "calm"
-    EXITED = "exited"
-    FEARFUL = "fearful"
-    ANGRY = "angry"
-    DISGUSTED = "disgusted"
-    SURPRISED = "surprised"
-    BORED = "bored"
-    DISAPPOINTED = "disappointed"
-
-
 class User(Base):
     __tablename__ = "users"
 
@@ -29,7 +13,7 @@ class User(Base):
     email = Column(String(50), nullable=False, unique=True, index=True)
     password_hash = Column(String(255), nullable=False)
     birth_date = Column(Date, nullable=False)
-    current_emotional_status = Column(Enum(EmotionalStatus), nullable=True)
+    current_emotional_status = Column(String(20), nullable=True)
     its_sharing_location = Column(Boolean, default=False)
     created_at = Column(TIMESTAMP(timezone=True), default=datetime.now(timezone.utc))
 

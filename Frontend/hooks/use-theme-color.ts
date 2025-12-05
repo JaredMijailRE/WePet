@@ -1,21 +1,39 @@
-/**
- * Learn more about light and dark modes:
- * https://docs.expo.dev/guides/color-schemes/
- */
+import { useColorScheme as useNativeColorScheme } from 'react-native';
 
-import { Colors } from '@/constants/theme';
-import { useColorScheme } from '@/hooks/use-color-scheme';
+const tintColorLight = '#0a7ea4';
+const tintColorDark = '#fff';
+
+export const Colors = {
+  light: {
+    text: '#000',
+    background: '#fff',
+    tint: tintColorLight,
+    tabIconDefault: '#ccc',
+    tabIconSelected: tintColorLight,
+  },
+  dark: {
+    text: '#fff',
+    background: '#000',
+    tint: tintColorDark,
+    tabIconDefault: '#ccc',
+    tabIconSelected: tintColorDark,
+  },
+};
+
+function useColorScheme(): 'light' | 'dark' {
+  return useNativeColorScheme() ?? 'light';
+}
 
 export function useThemeColor(
   props: { light?: string; dark?: string },
-  colorName: keyof typeof Colors.light & keyof typeof Colors.dark
-) {
-  const theme = useColorScheme() ?? 'light';
-  const colorFromProps = props[theme];
+  colorName: keyof typeof Colors.light & keyof typeof Colors.dark,
+): string {
+  const theme = useColorScheme();
+  const colorFromProps = props[theme as 'light' | 'dark'];
 
   if (colorFromProps) {
     return colorFromProps;
   } else {
-    return Colors[theme][colorName];
+    return Colors[theme as 'light' | 'dark'][colorName];
   }
 }

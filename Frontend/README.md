@@ -7,13 +7,13 @@ This is an [Expo](https://expo.dev) project created with [`create-expo-app`](htt
 1. Install dependencies
 
    ```bash
-   npm install
+   bun install
    ```
 
-2. Start the app
+2. Start the app - If wanted, replace `web` with `android`, althought you will need to either install Android Studio or the **Expo Go** app for android.
 
    ```bash
-   npx expo start
+   bun run web
    ```
 
 In the output, you'll find options to open the app in a
