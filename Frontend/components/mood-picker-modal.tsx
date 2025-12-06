@@ -8,15 +8,15 @@ import {
   StyleSheet,
   Image,
 } from 'react-native';
-import { Mood, moodConfig} from '../assets/moodAssets';
+import { MoodName, moodConfig} from '../assets/moodAssets';
 type Props = {
   visible: boolean;
-  onSelectMood: (mood: Mood) => void;
+  onSelectMood: (mood: MoodName) => void;
   onClose: () => void;
 };
 
 // List of moods to display in the modal
-const moods: { mood: Mood; label: string }[] = [
+const moods: { mood: MoodName; label: string }[] = [
   { mood: 'happy',     label: 'Happy' },
   { mood: 'excited',   label: 'Excited' },
   { mood: 'calm',      label: 'Calm' },

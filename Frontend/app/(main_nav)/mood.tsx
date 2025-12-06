@@ -1,100 +1,116 @@
 // app/(main_nav)/mood.tsx
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, StyleSheet, ScrollView, Text, Modal, Pressable } from 'react-native';
+
 import MoodPickerModal from '../../components/mood-picker-modal';
 import CircleButton from '../../components/circle-button-mood';
-import { Mood } from '../../assets/moodAssets';
+import { MoodName } from '../../assets/moodAssets';
 import GroupMoodCard, { Group } from '../../components/group-mood-card';
 import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import {
+  postMood,
+  getGroupMoods,
+  getUserGroups,
+  BackendMember,
+  BackendGroup,
+} from '../(mood)/sharing-service';
+
+// Por ahora dejamos un grupo “por defecto” mientras funciona el getUserGroups()
+const BACKEND_GROUP_ID = "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11";
+
 const MOCK_GROUPS: Group[] = [
   {
-    id: 'g1',
-    name: 'Group 1',
-    members: [],
-  },
-  {
-    id: 'g2',
-    name: 'Group 2',
-    members: [
-      { id: '1', name: 'Name 5', mood: 'jealous' },
-      { id: '2', name: 'Name 6', mood: 'loved' },
-      { id: '3', name: 'Name 1', mood: 'happy' },
-      { id: '4', name: 'Name 2', mood: 'sad' },
-      { id: '5', name: 'Name 3', mood: 'excited' },
-      { id: '6', name: 'Name 4', mood: 'calm' },
-      { id: '7', name: 'Name 1', mood: 'happy' },
-      { id: '8', name: 'Name 2', mood: 'sad' },
-      { id: '9', name: 'Name 3', mood: 'excited' },
-      { id: '10', name: 'Name 4', mood: 'calm' },
-      { id: '11', name: 'Name 1', mood: 'happy' },
-      { id: '12', name: 'Name 2', mood: 'sad' },
-      { id: '13', name: 'Name 3', mood: 'excited' },
-      { id: '14', name: 'Name 4', mood: 'calm' },
-    ],
-  },
-  {
-    id: 'g3',
-    name: 'Group 3',
-    members: [
-      { id: '5', name: 'Name 5', mood: 'worried' },
-      { id: '6', name: 'Name 6', mood: 'loved' },
-      { id: '7', name: 'Name 4', mood: 'calm' },
-      { id: '8', name: 'Name 5', mood: 'worried' },
-      { id: '9', name: 'Name 6', mood: 'loved' },
-      { id: '10', name: 'Name 4', mood: 'calm' },
-    ],
-  },
-  {
-    id: 'g4',
-    name: 'Group 4',
-    members: [
-      { id: '5', name: 'Name 5', mood: 'worried' },
-      { id: '6', name: 'Name 6', mood: 'loved' },
-      { id: '7', name: 'Name 4', mood: 'calm' },
-      { id: '8', name: 'Name 5', mood: 'worried' },
-      { id: '9', name: 'Name 6', mood: 'loved' },
-      { id: '10', name: 'Name 4', mood: 'calm' },
-      { id: '10', name: 'Name 4', mood: 'calm' },
-    ],
+    id: BACKEND_GROUP_ID,
+    name: 'Grupo de prueba',
+    members: []
   },
 ];
 
+function mapBackendMembers(backendMembers: BackendMember[]): Group["members"] {
+  return backendMembers.map((m, index) => ({
+    id: m.user_id,
+    name: `User ${index + 1}`,
+    mood: m.emotion as MoodName,
+  }));
+}
+
 export default function MoodScreen() {
   const [isModalVisible, setModalVisible] = useState(false);
-  const [selectedMood, setSelectedMood] = useState<Mood | null>(null);
+  const [selectedMood, setSelectedMood] = useState<MoodName | null>(null);
   const [selectedGroup, setSelectedGroup] = useState<Group | null>(null);
+
+  const [backendGroupMembers, setBackendGroupMembers] = useState<Group['members']>([]);
 
   const tabBarHeight = useBottomTabBarHeight();
   const insets = useSafeAreaInsets();
 
-  const handleSelectMood = (mood: Mood) => {
-    setSelectedMood(mood);
-    // Aquí va el back
+  useEffect(() => {
+    async function load() {
+      try {
+        // 👉 aquí podrías usar getUserGroups() para saber los grupos del usuario:
+        // const userGroups = await getUserGroups();
+        // console.log('Grupos del usuario:', userGroups);
+
+        const data = await getGroupMoods(BACKEND_GROUP_ID);
+        console.log('Respuesta cruda del backend:', data);
+        setBackendGroupMembers(mapBackendMembers(data));
+      } catch (e) {
+        console.error('Error cargando moods del grupo', e);
+      }
+    }
+    load();
+  }, []);
+
+  const handleSelectMood = async (mood: MoodName) => {
+    try {
+      setSelectedMood(mood);
+      console.log('Mood seleccionado:', mood);
+      await postMood(
+        [BACKEND_GROUP_ID],
+         mood ,
+      );
+
+      const data = await getGroupMoods(BACKEND_GROUP_ID);
+      setBackendGroupMembers(mapBackendMembers(data));
+    } catch (e) {
+      console.error('Error al enviar el mood', e);
+    }
   };
 
   return (
     <View style={styles.container}>
-      {/* Contenido scrolleable */}
       <View style={styles.content}>
         <ScrollView
           contentContainerStyle={styles.scrollContent}
         >
           <Text style={styles.title}>Moods</Text>
+          
+          {MOCK_GROUPS.map(group => {
+            const isBackendGroup = group.id === BACKEND_GROUP_ID;
 
-          {MOCK_GROUPS.map(group => (
-            <GroupMoodCard
-              key={group.id}
-              group={group}
-              maxVisible={6}
-              onPressOverflow={g => setSelectedGroup(g)}
-            />
-          ))}
+            const groupData: Group = isBackendGroup
+              ? {
+                  ...group,
+                  members: backendGroupMembers.length
+                    ? backendGroupMembers
+                    : group.members,
+                }
+              : group;
+
+            return (
+              <GroupMoodCard
+                key={groupData.id}
+                group={groupData}
+                maxVisible={6}
+                onPressOverflow={g => setSelectedGroup(g)}
+              />
+            );
+          })}
         </ScrollView>
       </View>
 
-      {/* Botón en footer fijo abajo, sin absolute */}
       <View
         style={[
           styles.bottomArea,
@@ -122,9 +138,7 @@ export default function MoodScreen() {
         <View style={styles.backdrop}>
           <View style={styles.modalBox}>
             {selectedGroup && (
-              <>
-                <GroupMoodCard group={selectedGroup} />
-              </>
+              <GroupMoodCard group={selectedGroup} />
             )}
           </View>
           <Pressable
@@ -163,25 +177,6 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0,0,0,0.35)',
     justifyContent: 'center',
     alignItems: 'center',
-  },
-  modalHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  modalTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-  },
-  closeText: {
-    fontSize: 20,
-  },
-  closeButtonWrapper: {
-    position: 'absolute',
-    top: 12,
-    right: 16,
-    zIndex: 1,
   },
   modalBox: {
     width: '90%',

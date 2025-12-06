@@ -1,12 +1,13 @@
 // components/GroupMoodCard.tsx
 import React from 'react';
-import { View, Text, StyleSheet, Image, Pressable} from 'react-native';
-import { Mood, moodConfig } from '../assets/moodAssets';
+import { View, Text, StyleSheet, Image, Pressable } from 'react-native';
+import { MoodName, moodConfig } from '../assets/moodAssets';
+
 
 export type GroupMember = {
   id: string;
   name: string;
-  mood: Mood;
+  mood: MoodName;
 };
 
 export type Group = {
@@ -21,42 +22,35 @@ type Props = {
   onPressOverflow?: (group: Group) => void;
 };
 
-export default function GroupMoodCard({ 
-    group,
-    maxVisible,
-    onPressOverflow, 
+export default function GroupMoodCard({
+  group,
+  maxVisible,
+  onPressOverflow,
 }: Props) {
-    const hasLimit = typeof maxVisible === 'number';
-    const members = group.members;
+  const members = group.members;
+  const hasLimit = typeof maxVisible === 'number';
 
-    const showOverflow = hasLimit && members.length > maxVisible!;
-    const visibleMembers = showOverflow
-        ? members.slice(0, maxVisible! - 1) 
-        : members;
+  const showOverflow = hasLimit && members.length > maxVisible!;
+  const visibleMembers = showOverflow ? members.slice(0, maxVisible! - 1) : members;
+  const extraCount = showOverflow ? members.length - (maxVisible! - 1) : 0;
 
-    const extraCount = showOverflow ? members.length - (maxVisible! - 1) : 0;
-    
-    return (
+  return (
     <View style={styles.card}>
-      {/* Header */}
+    {/*Header */}
       <View style={styles.headerRow}>
         <Text style={styles.groupName}>{group.name}</Text>
         <Text style={styles.countText}>{members.length} miembros</Text>
       </View>
 
-      {/* Grid */}
+      {/*Grid */}
       <View style={styles.grid}>
         {visibleMembers.map(member => {
-        const config = moodConfig[member.mood as Mood];
+          const config = moodConfig[member.mood];
 
-        return (
+          return (
             <View key={member.id} style={styles.memberItem}>
-              <View
-                style={[
-                  styles.moodCircle,
-                  { backgroundColor: config.color },
-                ]}
-              >
+              <View style={
+                [styles.moodCircle, { backgroundColor: config.color }]}>
                 <Image
                   source={config.image}
                   style={styles.moodImage}
@@ -80,7 +74,6 @@ export default function GroupMoodCard({
             </View>
           </Pressable>
         )}
-
       </View>
     </View>
   );
@@ -115,7 +108,7 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   memberItem: {
-    width: '25%', // 4 por fila
+    width: '25%',
     alignItems: 'center',
     marginBottom: 12,
   },
