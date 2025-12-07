@@ -9,7 +9,7 @@ import {
   ApiError
 } from './types';
 
-const API_BASE_URL = 'http://localhost/groups'; // Adjust this to your backend URL
+const API_BASE_URL = 'http://localhost'; // Adjust this to your backend URL
 
 export const useGroups = () => {
   const [loading, setLoading] = useState(false);
@@ -103,6 +103,17 @@ export const useGroups = () => {
     }
   };
 
+  const listUserGroups = async (): Promise<GroupResponseDTO[]> => {
+    setLoading(true);
+    setError(null);
+    try {
+      const response = await axiosInstance.get<GroupResponseDTO[]>('/groups/my-groups');
+      return response.data;
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const clearError = () => {
     setError(null);
   };
@@ -118,6 +129,7 @@ export const useGroups = () => {
     updateGroup,
     deleteGroup,
     joinGroup,
+    listUserGroups,
     clearError,
   };
 };

@@ -1,43 +1,68 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, TextInput, FlatList, Text, StyleSheet, TouchableOpacity, Image, Modal, Pressable } from 'react-native';
 import { useRouter } from 'expo-router';
 
 import CustomSearchBar from "@/components/ui/searchbar";
 import { useGroups } from '@/hooks';
 
-const data = [
-  { group_id: '1', group_name: 'groupA' },
-  { group_id: '2', group_name: 'groupB' },
-  { group_id: '3', group_name: 'groupC' },
-  { group_id: '4', group_name: 'groupD' },
-  { group_id: '5', group_name: 'groupE' },
-];
-
 const GroupsSearchTab = () => {
   const backgroundImage = require('../../assets/images/backgroundImage.jpeg');
   const groupImage = require('../../assets/images/groupIcon.png');
 
+  const { listUserGroups, loading, error } = useGroups();
+
+  const [groupsData, setGroupsData] = useState<GroupItem[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
-  const [filteredData, setFilteredData] = useState(data);
+  const [filteredData, setFilteredData] = useState<GroupItem[]>([]);
   const [modalVisible, setModalVisible] = useState(false);
+
+  const loadMyGroups = async () => {
+    try {
+      const groups = await listUserGroups();
+      console.log('My groups:', groups);
+
+      // Transform the API response to match GroupItem interface
+      const transformedGroups: GroupItem[] = groups.map(group => ({
+        id: group.id,
+        name: group.name
+      }));
+
+      setGroupsData(transformedGroups);
+      setFilteredData(transformedGroups); // Initially show all groups
+    } catch (err) {
+      console.error('Error loading groups:', err);
+    }
+  };
 
   const router = useRouter();
 
+  // Load groups when component mounts
+  useEffect(() => {
+    loadMyGroups();
+  }, []);
+
+
   interface GroupItem {
-    group_id: string; 
-    group_name: string;
+    id: string; 
+    name: string;
   }
 
   const handleSearch = (text:string) => {
     setSearchQuery(text);
 
-    const newData = data.filter(item => {
-      const itemData = item.group_name ? item.group_name.toUpperCase() : ''.toUpperCase();
-      const textData = text.toUpperCase();
-      return itemData.indexOf(textData) > -1;
-    });
-    
-    setFilteredData(newData);
+    if (text === '') {
+      // If search is empty, show all groups
+      setFilteredData(groupsData);
+    } else {
+      // Filter groups based on search query
+      const newData = groupsData.filter(item => {
+        const itemData = item.name ? item.name.toUpperCase() : ''.toUpperCase();
+        const textData = text.toUpperCase();
+        return itemData.indexOf(textData) > -1;
+      });
+
+      setFilteredData(newData);
+    }
   };
 
   const joinGroup = () => {
@@ -59,7 +84,7 @@ const GroupsSearchTab = () => {
           />
         </View>
         <View>
-          <Text style={styles.buttonText}>{item.group_name}</Text>
+          <Text style={styles.buttonText}>{item.name}</Text>
           <Text style={styles.buttonSubText}>notification</Text>
         </View>
         
@@ -98,7 +123,7 @@ const GroupsSearchTab = () => {
 
       <FlatList
         data={filteredData}
-        keyExtractor={item => item.group_id}
+        keyExtractor={item => item.id}
         renderItem={ groupItem }
         showsVerticalScrollIndicator={false}
       />

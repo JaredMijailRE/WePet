@@ -184,3 +184,21 @@ class SQLGroupRepository(GroupRepository):
             self.db.commit()
             return True
         return False
+
+    def find_groups_by_user_id(self, user_id: uuid.UUID) -> List[Group]:
+        # Query groups where the user is a member
+        db_groups = (
+            self.db.query(GroupModel)
+            .join(GroupMember)
+            .filter(GroupMember.user_id == user_id)
+            .all()
+        )
+
+        groups = []
+        for db_group in db_groups:
+            groups.append(Group(
+                id=db_group.id,
+                name=db_group.name,
+                invite_code=db_group.invite_code
+            ))
+        return groups

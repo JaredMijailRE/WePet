@@ -50,6 +50,10 @@ class GroupRepository(ABC):
         pass
 
     @abstractmethod
+    def find_groups_by_user_id(self, user_id: uuid.UUID) -> List[Group]:
+        pass
+
+    @abstractmethod
     def save_activity(self, activity: Activity) -> Activity:
         pass
 

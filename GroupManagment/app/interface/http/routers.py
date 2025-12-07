@@ -20,10 +20,21 @@ from app.application.usecases.get_activity import GetActivityUseCase
 from app.application.usecases.list_activities import ListActivitiesUseCase
 from app.application.usecases.update_activity import UpdateActivityUseCase
 from app.application.usecases.delete_activity import DeleteActivityUseCase
+from app.application.usecases.list_user_groups import ListUserGroupsUseCase
 from app.adapter.auth.dependencies import get_current_user_id
 from typing import List
 
 router = APIRouter()
+
+# List user groups endpoint (must come before dynamic routes)
+@router.get("/my-groups", response_model=List[GroupResponseDTO])
+def list_user_groups(
+    user_id: str = Depends(get_current_user_id),
+    db: Session = Depends(get_db)
+):
+    repo = SQLGroupRepository(db)
+    use_case = ListUserGroupsUseCase(repo)
+    return use_case.execute(uuid.UUID(user_id))
 
 # Group CRUD endpoints
 @router.post("/", response_model=GroupResponseDTO)
