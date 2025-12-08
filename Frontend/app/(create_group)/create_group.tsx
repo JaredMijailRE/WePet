@@ -1,25 +1,30 @@
-import React, { useState } from 'react';
+import React, { use, useState } from 'react';
 import FontAwesome6 from '@expo/vector-icons/FontAwesome6';
 import { View, TextInput, FlatList, Text, StyleSheet, Alert, TouchableOpacity, Platform, Image, Pressable } from 'react-native';
 import { PetStyler } from '../../components/pet-styler';
 import { router } from "expo-router";
+import { useGroups } from '@/hooks';
 
 type PetStyle = 'dog' | 'cat' | 'dragon' | 'duck';
 
 export default function CreateGroupPage() {
+    const {createGroup, loading, error} = useGroups();
     const [selectedStyle, setSelectedStyle] = useState<PetStyle>('dog');
-    const [groupName, setGroupName] = useState('');
+    const [name, setGroupName] = useState('');
     const [petName, setPetName] = useState('');
 
     const petStyles: PetStyle[] = ['dog', 'cat', 'dragon', 'duck'];
 
-    const handleCreateGroup = () => {
-        if (!groupName.trim() || !petName.trim()) {
+    const handleCreateGroup = async () => {
+        if (!name.trim() || !petName.trim()) {
             Alert.alert('Error', 'Por favor ingresa el nombre del grupo y de la mascota');
             return;
         }
-        // TODO: Call API to create group with selectedStyle
-        Alert.alert('Éxito', `Grupo "${groupName}" creado con mascota ${selectedStyle}`);
+        const newGroup = await createGroup({
+          name,
+        });
+        
+        Alert.alert('Éxito', `Grupo "${name}" creado con mascota ${selectedStyle}`);
         router.push("/(main_nav)/groups");
     };
 
@@ -32,7 +37,7 @@ export default function CreateGroupPage() {
                     style={styles.testInput} 
                     placeholder='Group name' 
                     placeholderTextColor={'#000000ff'}
-                    value={groupName}
+                    value={name}
                     onChangeText={setGroupName}
                 />
             </View>
