@@ -77,6 +77,19 @@ export interface ActivityResponseDTO {
   created_at: string; // ISO date string
 }
 
+export interface UserActivityResponseDTO {
+  id: string;
+  group_id: string;
+  group_name: string;
+  title: string;
+  description?: string;
+  start_date: string; // ISO date string
+  end_date: string; // ISO date string
+  xp_reward: number;
+  status: ActivityStatus;
+  created_at: string; // ISO date string
+}
+
 // Auth DTOs
 export interface LoginDTO {
   username: string;

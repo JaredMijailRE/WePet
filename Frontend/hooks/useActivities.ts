@@ -5,6 +5,7 @@ import {
   ActivityCreateDTO,
   ActivityResponseDTO,
   ActivityUpdateDTO,
+  UserActivityResponseDTO,
   ApiError
 } from './types';
 
@@ -106,11 +107,11 @@ export const useActivities = () => {
     }
   };
 
-  const listUserActivities = async (): Promise<ActivityResponseDTO[]> => {
+  const listUserActivities = async (): Promise<UserActivityResponseDTO[]> => {
     setLoading(true);
     setError(null);
     try {
-      const response = await axiosInstance.get<ActivityResponseDTO[]>('/my-activities');
+      const response = await axiosInstance.get<UserActivityResponseDTO[]>('/my-activities');
       return response.data;
     } finally {
       setLoading(false);

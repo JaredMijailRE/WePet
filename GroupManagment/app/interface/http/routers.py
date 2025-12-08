@@ -4,8 +4,8 @@ import uuid
 from app.adapter.db.database import get_db
 from app.adapter.db.group_repository_sql import SQLGroupRepository
 from app.application.dto.group_dto import (
-    GroupCreateDTO, JoinGroupDTO, GroupResponseDTO, GroupUpdateDTO,
-    GroupMemberDTO, GroupMemberUpdateDTO, ActivityCreateDTO, ActivityUpdateDTO, ActivityResponseDTO
+    GroupCreateDTO, JoinGroupDTO, GroupResponseDTO, GroupUpdateDTO, GroupMemberDTO, 
+    GroupMemberUpdateDTO, ActivityCreateDTO, ActivityUpdateDTO, ActivityResponseDTO, UserActivityResponseDTO
 )
 from app.application.usecases.create_group import CreateGroupUseCase
 from app.application.usecases.join_group import JoinGroupUseCase
@@ -38,7 +38,7 @@ def list_user_groups(
     return use_case.execute(uuid.UUID(user_id))
 
 # List user activities endpoint
-@router.get("/my-activities", response_model=List[ActivityResponseDTO])
+@router.get("/my-activities", response_model=List[UserActivityResponseDTO])
 def list_user_activities(
     user_id: str = Depends(get_current_user_id),
     db: Session = Depends(get_db)

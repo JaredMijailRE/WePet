@@ -32,11 +32,11 @@ export default function Index() {
   const loadMyActivities = async () => {
     try {
       const activities = await listUserActivities();
-      console.log('activities obtained');
+      console.log('activities obtained: ', activities);
 
       const transformedActivities: ActivityItem[] = activities.map(activity => ({
         title: activity.title,
-        group: activity.group_id,
+        group: activity.group_name,
         exp: activity.xp_reward,
         description: activity.description,
         end_date: new Date(activity.end_date),
