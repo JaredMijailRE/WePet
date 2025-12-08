@@ -29,6 +29,7 @@ export default function Index() {
   const [activityModalVisible,    setActivityModalVisible]    = useState(false);
   const [newActivityModalVisible, setNewActivityModalVisible] = useState(false);
 
+  // Load the activities for the current user
   const loadMyActivities = async () => {
     try {
       const activities = await listUserActivities();
@@ -54,6 +55,7 @@ export default function Index() {
     loadMyActivities();
   }, []);
 
+  // Handle the search for activities
   const handleSearch = (text:string) => {
     setSearchQuery(text);
 
@@ -70,6 +72,7 @@ export default function Index() {
     }
   };
 
+  // this part is related to the new activity modal
   const addActivity = () => {
     console.log("en el modal, realizar busqueda de grupos")
     setNewActivityModalVisible(true)
@@ -80,6 +83,7 @@ export default function Index() {
     setNewActivityModalVisible(false)
   }
 
+  // this is for the activity cards
   const activityCard = ({ item }: { item: ActivityItem }) => (
     <ActivityCards
     item={item}
@@ -92,6 +96,7 @@ export default function Index() {
     setActivityModalVisible(true)
   }
 
+  // this is for the activity modal
   const handleUpdateActivity = (item: ActivityItem) => {
     console.log("update the activity!!!")
     setActivityModalVisible(false)
