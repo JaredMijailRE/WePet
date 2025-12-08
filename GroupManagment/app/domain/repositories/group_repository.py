@@ -66,6 +66,10 @@ class GroupRepository(ABC):
         pass
 
     @abstractmethod
+    def list_activities_by_user(self, user_id: uuid.UUID) -> List[Activity]:
+        pass
+
+    @abstractmethod
     def update_activity(self, activity_id: uuid.UUID, title=None, description=None, start_date=None, end_date=None, xp_reward=None, status=None) -> Activity | None:
         pass
 

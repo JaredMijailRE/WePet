@@ -106,6 +106,17 @@ export const useActivities = () => {
     }
   };
 
+  const listUserActivities = async (): Promise<ActivityResponseDTO[]> => {
+    setLoading(true);
+    setError(null);
+    try {
+      const response = await axiosInstance.get<ActivityResponseDTO[]>('/my-activities');
+      return response.data;
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const clearError = () => {
     setError(null);
   };
@@ -119,6 +130,7 @@ export const useActivities = () => {
     createActivity,
     getActivity,
     listActivities,
+    listUserActivities,
     updateActivity,
     deleteActivity,
     clearError,

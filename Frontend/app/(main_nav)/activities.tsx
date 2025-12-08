@@ -25,7 +25,7 @@ export interface ActivityItem {
   group:string,
   exp: number,
   description: string,
-  end_date: string,     // Esto es un datetime...
+  end_date: string,     
   state: string
 }
 

@@ -21,6 +21,7 @@ from app.application.usecases.list_activities import ListActivitiesUseCase
 from app.application.usecases.update_activity import UpdateActivityUseCase
 from app.application.usecases.delete_activity import DeleteActivityUseCase
 from app.application.usecases.list_user_groups import ListUserGroupsUseCase
+from app.application.usecases.list_user_activities import ListUserActivitiesUseCase
 from app.adapter.auth.dependencies import get_current_user_id
 from typing import List
 
@@ -34,6 +35,16 @@ def list_user_groups(
 ):
     repo = SQLGroupRepository(db)
     use_case = ListUserGroupsUseCase(repo)
+    return use_case.execute(uuid.UUID(user_id))
+
+# List user activities endpoint
+@router.get("/my-activities", response_model=List[ActivityResponseDTO])
+def list_user_activities(
+    user_id: str = Depends(get_current_user_id),
+    db: Session = Depends(get_db)
+):
+    repo = SQLGroupRepository(db)
+    use_case = ListUserActivitiesUseCase(repo)
     return use_case.execute(uuid.UUID(user_id))
 
 # Group CRUD endpoints
