@@ -1,52 +1,73 @@
 import { View, StyleSheet, FlatList, Image } from "react-native";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+
 import CustomSearchBar from "@/components/ui/searchbar";
 import ActivityCards from "@/components/ui/activitycard";
 import ActivityModal from "@/components/ui/activity-modal";
 import NewActivityModal from "@/components/ui/newActivity-modal";
 
-const data = [
-  { title: "Activity 1", group: "Group 1", exp: 10, description: "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.", end_date: "02-12-2025", state: "completed" },
-  { title: "Activity 2", group: "Group 2", exp: 10, description: "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.", end_date: "11-12-2025", state: "active" },
-  { title: "Activity 3", group: "Group 2", exp: 10, description: "description 3", end_date: "03-12-2025", state: "expired" },
-  { title: "Activity 4", group: "Group 1", exp: 10, description: "description 4", end_date: "05-12-2025", state: "completed" },
-  { title: "Activity 5", group: "Group 1", exp: 10, description: "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.", end_date: "02-12-2025", state: "completed" },
-  { title: "Activity 6", group: "Group 2", exp: 10, description: "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.", end_date: "11-12-2025", state: "active" },
-  { title: "Activity 7", group: "Group 2", exp: 10, description: "description 3", end_date: "03-12-2025", state: "expired" },
-  { title: "Activity 8", group: "Group 1", exp: 10, description: "description 4", end_date: "05-12-2025", state: "completed" },
-  { title: "Activity 9", group: "Group 1", exp: 10, description: "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.", end_date: "02-12-2025", state: "completed" },
-  { title: "Activity 10", group: "Group 2", exp: 10, description: "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.", end_date: "11-12-2025", state: "active" },
-  { title: "Activity 11", group: "Group 2", exp: 10, description: "description 3", end_date: "03-12-2025", state: "expired" },
-  { title: "Activity 12", group: "Group 1", exp: 10, description: "description 4", end_date: "05-12-2025", state: "completed" },
-]
+import { useActivities } from "@/hooks";
 
 export interface ActivityItem {
   title:string,
   group:string,
   exp: number,
-  description: string,
-  end_date: string,     
+  description: string|undefined,
+  end_date: Date,     
   state: string
 }
 
 export default function Index() {
   const backgroundImage = require('../../assets/images/backgroundImage.jpeg');
 
+  const { listUserActivities, loading, error } = useActivities();
+
+  const [activityData,            setActivityData]            = useState<ActivityItem[]>([]);
   const [searchQuery,             setSearchQuery]             = useState('');
-  const [filteredData,            setFilteredData]            = useState(data);
+  const [filteredData,            setFilteredData]            = useState<ActivityItem[]>([]);
   const [selectedActivity,        setSelectedActivity]        = useState<ActivityItem | null>(null);
   const [activityModalVisible,    setActivityModalVisible]    = useState(false);
   const [newActivityModalVisible, setNewActivityModalVisible] = useState(false);
 
+  const loadMyActivities = async () => {
+    try {
+      const activities = await listUserActivities();
+      console.log('activities obtained');
+
+      const transformedActivities: ActivityItem[] = activities.map(activity => ({
+        title: activity.title,
+        group: activity.group_id,
+        exp: activity.xp_reward,
+        description: activity.description,
+        end_date: new Date(activity.end_date),
+        state: String(activity.status)
+      }));
+
+      setActivityData(transformedActivities)
+      setFilteredData(transformedActivities)
+    } catch (err) {
+      console.error('Error loading groups:', err);
+    }
+  }
+
+  useEffect(() => {
+    loadMyActivities();
+  }, []);
+
   const handleSearch = (text:string) => {
     setSearchQuery(text);
-    const newData = data.filter(item => {
-      const itemData = item.title ? item.title.toUpperCase() : ''.toUpperCase();
-      const textData = text.toUpperCase();
-      return itemData.indexOf(textData) > -1;
-    });
-    
-    setFilteredData(newData);
+
+    if (text === '') {
+      setFilteredData(activityData);
+    } else {
+      const newData = activityData.filter(item => {
+        const itemData = item.title ? item.title.toUpperCase() : ''.toUpperCase();
+        const textData = text.toUpperCase();
+        return itemData.indexOf(textData) > -1;
+      });
+
+      setFilteredData(newData);
+    }
   };
 
   const addActivity = () => {

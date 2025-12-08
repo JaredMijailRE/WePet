@@ -48,7 +48,7 @@ const ActivityCards = ({ item, handlePress }: ActivityCardsProps) => {
 
             <View style={{ flex: 1, alignItems: 'flex-end' }}>
             <Text style={{ color: colors.text, fontWeight: 'bold'}}>
-                {item.end_date}
+                { item.end_date.toLocaleDateString() }
             </Text>
             <Text style={{ color: colors.text, fontSize: 11 }}>
                 +{item.exp} exp

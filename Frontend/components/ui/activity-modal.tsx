@@ -37,7 +37,7 @@ const ActivityModal = ({ activity, visible, onClose, onUpdate }: ModalBaseProps)
 
                     <View style={{ flex: 3, alignItems: 'flex-end' }}>
                     <Text style={{ color: '#000', fontWeight: 'bold'}}>
-                        {activity.end_date}
+                        { activity.end_date.toLocaleDateString() }
                     </Text>
                     <Text style={{ color:'#595959', fontSize: 11 }}>
                         +{activity.exp} exp
