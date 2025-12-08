@@ -1,19 +1,20 @@
 import uuid
 from app.domain.repositories.group_repository import GroupRepository
-from app.application.dto.group_dto import ActivityResponseDTO
+from app.application.dto.group_dto import UserActivityResponseDTO
 from typing import List
 
 class ListUserActivitiesUseCase:
     def __init__(self, repository: GroupRepository):
         self.repository = repository
 
-    def execute(self, user_id: uuid.UUID) -> List[ActivityResponseDTO]:
+    def execute(self, user_id: uuid.UUID) -> List[UserActivityResponseDTO]:
         activities = self.repository.list_activities_by_user(user_id)
 
         return [
-            ActivityResponseDTO(
+            UserActivityResponseDTO(
                 id=activity.id,
                 group_id=activity.group_id,
+                group_name=activity.group_name,
                 title=activity.title,
                 description=activity.description,
                 start_date=activity.start_date,

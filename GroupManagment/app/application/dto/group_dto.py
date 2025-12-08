@@ -59,3 +59,14 @@ class ActivityResponseDTO(BaseModel):
     status: ActivityStatus
     created_at: datetime
 
+class UserActivityResponseDTO(BaseModel):
+    id: uuid.UUID
+    group_id: uuid.UUID
+    group_name: str
+    title: str
+    description: Optional[str]
+    start_date: datetime
+    end_date: datetime
+    xp_reward: int
+    status: ActivityStatus
+    created_at: datetime

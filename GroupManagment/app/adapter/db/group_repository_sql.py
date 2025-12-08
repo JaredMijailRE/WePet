@@ -1,12 +1,13 @@
+from sqlalchemy import text
 from sqlalchemy.orm import Session
 from app.domain.repositories.group_repository import GroupRepository
 from app.domain.entities.group import Group
 from app.domain.entities.activity import Activity
 # Ajusta este import según dónde tengas models.py (ej: app.adapter.db.models)
 from app.adapter.db.models import Group as GroupModel, GroupMember, Activity as ActivityModel
+from app.adapter.db.models import ActivityStatus
 import uuid
 from typing import List
-
 class SQLGroupRepository(GroupRepository):
     def __init__(self, db: Session):
         self.db = db
@@ -204,26 +205,44 @@ class SQLGroupRepository(GroupRepository):
         return groups
     
     def list_activities_by_user(self, user_id: uuid.UUID) -> List[Activity]:
-        # Query activities from groups where the user is a member
-        db_activities = (
-            self.db.query(ActivityModel)
-            .join(GroupModel)
-            .join(GroupMember)
-            .filter(GroupMember.user_id == user_id)
-            .all()
-        )
+        query = text("""
+            SELECT
+                a.id, a.group_id, g.name as group_name, a.title, a.description,
+                a.start_date, a.end_date, a.xp_reward, a.status, a.created_at
+            FROM activities a
+            JOIN groups g ON a.group_id = g.id
+            JOIN group_members gm ON g.id = gm.group_id
+            WHERE gm.user_id = :user_id
+        """)
+
+        result = self.db.execute(query, {"user_id": user_id})
+        rows = result.fetchall()
 
         activities = []
-        for db_activity in db_activities:
-            activities.append(Activity(
-                id=db_activity.id,
-                group_id=db_activity.group_id,
-                title=db_activity.title,
-                description=db_activity.description,
-                start_date=db_activity.start_date,
-                end_date=db_activity.end_date,
-                xp_reward=db_activity.xp_reward,
-                status=db_activity.status,
-                created_at=db_activity.created_at
-            ))
+        for row in rows:
+            class ActivityWithGroup:
+                def __init__(self, row):
+                    self.id = row[0]
+                    self.group_id = row[1]
+                    self.group_name = row[2]
+                    self.title = row[3]
+                    self.description = row[4]
+                    self.start_date = row[5]
+                    self.end_date = row[6]
+                    self.xp_reward = row[7]
+                    
+                    status_str = str(row[8]).lower()
+                    if status_str == "active":
+                        self.status = ActivityStatus.ACTIVE
+                    elif status_str == "expired":
+                        self.status = ActivityStatus.EXPIRED
+                    elif status_str == "completed":
+                        self.status = ActivityStatus.COMPLETED
+                    else:
+                        self.status = ActivityStatus.ACTIVE  
+
+                    self.created_at = row[9]
+
+            activities.append(ActivityWithGroup(row))
+
         return activities    
