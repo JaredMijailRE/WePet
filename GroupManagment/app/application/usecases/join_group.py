@@ -20,4 +20,4 @@ class JoinGroupUseCase:
         # Agregar como MIEMBRO
         self.repository.add_member(group.id, user_id, Role.MEMBER)
 
-        return {"message": f"Te has unido exitosamente al grupo {group.name}"}
+        return {"message": f"Te has unido exitosamente al grupo {group.name}", "group_id": f"{group.id}"}

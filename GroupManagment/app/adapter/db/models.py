@@ -33,7 +33,7 @@ class Activity(Base):
     group_id = Column(UUID(as_uuid=True), ForeignKey("groups.id"), nullable=False)
     title = Column(String(50), nullable=False)
     description = Column(Text, nullable=True)
-    start_date = Column(TIMESTAMP, nullable=False)
+    start_date = Column(TIMESTAMP, nullable=False, default=datetime.now(timezone.utc))
     end_date = Column(TIMESTAMP, nullable=False)
     xp_reward = Column(Integer, nullable=False)
     status = Column(Enum(ActivityStatus), nullable=False)

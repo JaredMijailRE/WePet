@@ -1,30 +1,158 @@
-import { Text, View, StyleSheet } from "react-native";
-import { Link } from 'expo-router';
+import { View, StyleSheet, FlatList, Image } from "react-native";
+import { useState, useEffect } from "react";
+
+import CustomSearchBar from "@/components/ui/searchbar";
+import ActivityCards from "@/components/ui/activitycard";
+import ActivityModal from "@/components/ui/activity-modal";
+import NewActivityModal from "@/components/ui/newActivity-modal";
+
+import { useActivities } from "@/hooks";
+
+export interface ActivityItem {
+  title:string,
+  group:string,
+  exp: number,
+  description: string|undefined,
+  end_date: Date,     
+  state: string
+}
 
 export default function Index() {
+  const backgroundImage = require('../../assets/images/backgroundImage.jpeg');
+
+  const { listUserActivities, loading, error } = useActivities();
+
+  const [activityData,            setActivityData]            = useState<ActivityItem[]>([]);
+  const [searchQuery,             setSearchQuery]             = useState('');
+  const [filteredData,            setFilteredData]            = useState<ActivityItem[]>([]);
+  const [selectedActivity,        setSelectedActivity]        = useState<ActivityItem | null>(null);
+  const [activityModalVisible,    setActivityModalVisible]    = useState(false);
+  const [newActivityModalVisible, setNewActivityModalVisible] = useState(false);
+
+  const loadMyActivities = async () => {
+    try {
+      const activities = await listUserActivities();
+      console.log('activities obtained');
+
+      const transformedActivities: ActivityItem[] = activities.map(activity => ({
+        title: activity.title,
+        group: activity.group_id,
+        exp: activity.xp_reward,
+        description: activity.description,
+        end_date: new Date(activity.end_date),
+        state: String(activity.status)
+      }));
+
+      setActivityData(transformedActivities)
+      setFilteredData(transformedActivities)
+    } catch (err) {
+      console.error('Error loading groups:', err);
+    }
+  }
+
+  useEffect(() => {
+    loadMyActivities();
+  }, []);
+
+  const handleSearch = (text:string) => {
+    setSearchQuery(text);
+
+    if (text === '') {
+      setFilteredData(activityData);
+    } else {
+      const newData = activityData.filter(item => {
+        const itemData = item.title ? item.title.toUpperCase() : ''.toUpperCase();
+        const textData = text.toUpperCase();
+        return itemData.indexOf(textData) > -1;
+      });
+
+      setFilteredData(newData);
+    }
+  };
+
+  const addActivity = () => {
+    console.log("en el modal, realizar busqueda de grupos")
+    setNewActivityModalVisible(true)
+  }
+
+  const createActivity = (formData: any) => {
+    console.log("create Activity DTO")
+    setNewActivityModalVisible(false)
+  }
+
+  const activityCard = ({ item }: { item: ActivityItem }) => (
+    <ActivityCards
+    item={item}
+    handlePress={() => handleActivityPress(item)}
+    />
+  );
+
+  const handleActivityPress = (item: ActivityItem) => {
+    setSelectedActivity(item)
+    setActivityModalVisible(true)
+  }
+
+  const handleUpdateActivity = (item: ActivityItem) => {
+    console.log("update the activity!!!")
+    setActivityModalVisible(false)
+  }
+
   return (
-    <View style={styles.container}>
-      <Text style={styles.text}>Hello, hope you're enjoying this</Text>
-      <Link href="/groups" style={styles.button}>
-        Go to About Screen
-      </Link>
+    <View style={styles.mainContainer}>
+      <Image 
+        source={backgroundImage} 
+        style={styles.backgroundImage}
+        resizeMode="contain" 
+      />
+
+      <CustomSearchBar
+        placeholder="Search an Activity..."
+        searchQuery={searchQuery}
+        handleSearch={handleSearch}
+        onAdd={addActivity}
+      />
+
+      <FlatList
+        data={filteredData}
+        keyExtractor={item => item.title}
+        renderItem={ activityCard }
+        showsVerticalScrollIndicator={false}
+      />
+
+      {activityModalVisible && selectedActivity && (
+        <ActivityModal
+          activity={selectedActivity} 
+          visible={activityModalVisible}
+          onClose={() => setActivityModalVisible(false)}
+          onUpdate={() => handleUpdateActivity(selectedActivity)} 
+        />
+      )}
+
+      <NewActivityModal
+        visible={newActivityModalVisible}
+        onClose={() => setNewActivityModalVisible(false)}
+        onSubmit={createActivity}
+      />
+
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  mainContainer: {
+    paddingHorizontal: 30,
+    paddingBottom: 100,
     flex: 1,
-    backgroundColor:'#25292e',
-    justifyContent: "center",
-    alignItems: "center",
+    backgroundColor:'#fff',
   },
-  text: {
-    color: '#fff'
+  backgroundImage: {
+    position: 'absolute', 
+    top: 0, 
+    left: 0, 
+    bottom: 0, 
+    right: 0,
+    opacity: 0.3, 
+    width: '100%', 
+    height: '100%',
   },
-  button: {
-    fontSize: 20,
-    textDecorationLine: 'underline',
-    color: '#fff'
-  }
 })

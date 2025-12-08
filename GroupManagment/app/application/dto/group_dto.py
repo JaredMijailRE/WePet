@@ -4,7 +4,6 @@ from datetime import datetime
 from typing import Optional
 from app.adapter.db.models import Role, ActivityStatus
 
-
 class GroupCreateDTO(BaseModel):
     name: str
 
@@ -15,7 +14,7 @@ class GroupResponseDTO(BaseModel):
     id: uuid.UUID
     name: str
     invite_code: str
-    
+
 class GroupUpdateDTO(BaseModel):
     name: Optional[str] = None
 
@@ -59,3 +58,4 @@ class ActivityResponseDTO(BaseModel):
     xp_reward: int
     status: ActivityStatus
     created_at: datetime
+

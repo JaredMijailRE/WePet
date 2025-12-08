@@ -184,3 +184,46 @@ class SQLGroupRepository(GroupRepository):
             self.db.commit()
             return True
         return False
+
+    def find_groups_by_user_id(self, user_id: uuid.UUID) -> List[Group]:
+        # Query groups where the user is a member
+        db_groups = (
+            self.db.query(GroupModel)
+            .join(GroupMember)
+            .filter(GroupMember.user_id == user_id)
+            .all()
+        )
+
+        groups = []
+        for db_group in db_groups:
+            groups.append(Group(
+                id=db_group.id,
+                name=db_group.name,
+                invite_code=db_group.invite_code
+            ))
+        return groups
+    
+    def list_activities_by_user(self, user_id: uuid.UUID) -> List[Activity]:
+        # Query activities from groups where the user is a member
+        db_activities = (
+            self.db.query(ActivityModel)
+            .join(GroupModel)
+            .join(GroupMember)
+            .filter(GroupMember.user_id == user_id)
+            .all()
+        )
+
+        activities = []
+        for db_activity in db_activities:
+            activities.append(Activity(
+                id=db_activity.id,
+                group_id=db_activity.group_id,
+                title=db_activity.title,
+                description=db_activity.description,
+                start_date=db_activity.start_date,
+                end_date=db_activity.end_date,
+                xp_reward=db_activity.xp_reward,
+                status=db_activity.status,
+                created_at=db_activity.created_at
+            ))
+        return activities    

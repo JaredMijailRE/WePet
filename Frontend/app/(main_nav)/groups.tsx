@@ -1,53 +1,78 @@
-import React, { useState } from 'react';
-import FontAwesome6 from '@expo/vector-icons/FontAwesome6';
-import { View, TextInput, FlatList, Text, StyleSheet, TouchableOpacity, Platform, Image, Modal } from 'react-native';
-import { Redirect, useRouter } from 'expo-router';
-import { Route } from 'expo-router/build/Route';
+import React, { useState, useEffect } from 'react';
+import { View, TextInput, FlatList, Text, StyleSheet, TouchableOpacity, Image, Modal, Pressable } from 'react-native';
+import { useRouter } from 'expo-router';
 
-const data = [
-  { group_id: '1', group_name: 'groupA' },
-  { group_id: '2', group_name: 'groupB' },
-  { group_id: '3', group_name: 'groupC' },
-  { group_id: '4', group_name: 'groupD' },
-  { group_id: '5', group_name: 'groupE' },
-];
+import CustomSearchBar from "@/components/ui/searchbar";
+import { useGroups } from '@/hooks';
 
 const GroupsSearchTab = () => {
   const backgroundImage = require('../../assets/images/backgroundImage.jpeg');
   const groupImage = require('../../assets/images/groupIcon.png');
 
+  const { listUserGroups, joinGroup, loading, error } = useGroups();
+
+  const [groupsData, setGroupsData] = useState<GroupItem[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
-  const [filteredData, setFilteredData] = useState(data);
-  const [isFocused, setIsFocused] = useState(false);
+  const [filteredData, setFilteredData] = useState<GroupItem[]>([]);
   const [modalVisible, setModalVisible] = useState(false);
+  const [groupID, setGroupID] = useState('')
+  const [isGroupidEmpty, setGroupIDEmpty] = useState(false)
+  const [errorFetchingGroup, setErrorFetching] = useState(false)
+
+  const loadMyGroups = async () => {
+    try {
+      const groups = await listUserGroups();
+      console.log('My groups:', groups);
+
+      const transformedGroups: GroupItem[] = groups.map(group => ({
+        id: group.id,
+        name: group.name
+      }));
+
+      setGroupsData(transformedGroups);
+      setFilteredData(transformedGroups);
+    } catch (err) {
+      console.error('Error loading groups:', err);
+    }
+  };
 
   const router = useRouter();
 
+  // Load groups when component mounts
+  useEffect(() => {
+    loadMyGroups();
+  }, []);
+
+
   interface GroupItem {
-    group_id: string; 
-    group_name: string;
+    id: string; 
+    name: string;
   }
 
   const handleSearch = (text:string) => {
     setSearchQuery(text);
 
-    const newData = data.filter(item => {
-      const itemData = item.group_name ? item.group_name.toUpperCase() : ''.toUpperCase();
-      const textData = text.toUpperCase();
-      return itemData.indexOf(textData) > -1;
-    });
-    
-    setFilteredData(newData);
+    if (text === '') {
+      setFilteredData(groupsData);
+    } else {
+      const newData = groupsData.filter(item => {
+        const itemData = item.name ? item.name.toUpperCase() : ''.toUpperCase();
+        const textData = text.toUpperCase();
+        return itemData.indexOf(textData) > -1;
+      });
+
+      setFilteredData(newData);
+    }
   };
 
-  const joinGroup = () => {
+  const openJoinGroupModal = () => {
     setModalVisible(true)
   };
 
   const groupItem = ({ item }: { item: GroupItem }) => (
     <TouchableOpacity 
       style={styles.button}
-      onPress={() => console.log('Botón presionado:', item.group_name)}
+      onPress={() => router.push(`/pet_service/pet?groupId=${item.id}`)}
     >
       <View style={styles.listItemContainer}>
         <Text style={{ color: "#9c76c2", fontSize: 32, paddingBottom: 3}}>•</Text>
@@ -59,7 +84,7 @@ const GroupsSearchTab = () => {
           />
         </View>
         <View>
-          <Text style={styles.buttonText}>{item.group_name}</Text>
+          <Text style={styles.buttonText}>{item.name}</Text>
           <Text style={styles.buttonSubText}>notification</Text>
         </View>
         
@@ -67,12 +92,32 @@ const GroupsSearchTab = () => {
     </TouchableOpacity>
   )
 
-  const handleJoin = () => {
-    setModalVisible(!modalVisible)
+  const handleJoin = async () => {
+    if(groupID === ''){
+      setGroupIDEmpty(true)
+    } else {
+      try {
+        setGroupIDEmpty(false)
+        await joinGroup({invite_code: groupID});
+
+        setModalVisible(!modalVisible)
+        setErrorFetching(false)
+        setGroupID('')
+      } catch (err) {
+        setErrorFetching(true)
+        console.error('Error loading groups:', err);
+      }
+
+    }
   }
 
   const handleCreate = () => {
     setModalVisible(!modalVisible)
+    router.push("/(create_group)/create_group")
+  }
+
+  const handleGroup = () => {
+    router.push("/(create_group)/group-config")
   }
 
   return (
@@ -80,28 +125,22 @@ const GroupsSearchTab = () => {
       <Image 
         source={backgroundImage} 
         style={styles.backgroundImage}
-        // Usa 'contain' o 'center' si no quieres que se estire
         resizeMode="contain" 
       />
+      
+      <CustomSearchBar
+            placeholder="Search..."
+            searchQuery={searchQuery}
+            handleSearch={handleSearch}
+            onAdd={openJoinGroupModal}
+      />
 
-      <View style={styles.searchAddContainer}>
-        <View style={[styles.searchContainer, isFocused && styles.searchContainerFocused]}>
-        <TextInput
-          style={[ styles.searchInput, Platform.OS === 'web' && { outlineStyle: 'none' as any } ]}
-          placeholder="Search..."
-          value={searchQuery}
-          onChangeText={handleSearch}
-          onFocus={() => setIsFocused(true)} 
-          onBlur={() => setIsFocused(false)} 
-          underlineColorAndroid="transparent"
-        />
-        <FontAwesome6 name="magnifying-glass" size={18} color="black" style={styles.searchIcon}/>
-        </View>
-
-        <TouchableOpacity style={styles.plusButton} onPress={joinGroup}>
-          <FontAwesome6 name="plus" size={15} color="black" />
-        </TouchableOpacity>
-      </View>
+      <FlatList
+        data={filteredData}
+        keyExtractor={item => item.id}
+        renderItem={ groupItem }
+        showsVerticalScrollIndicator={false}
+      />
 
       <Modal
         animationType="fade"
@@ -111,26 +150,35 @@ const GroupsSearchTab = () => {
           setModalVisible(!modalVisible);
         }}
       >
-        <View style={styles.joinGroupModalContainer}>
-          <View style={styles.joinGroupModal}>
+        <Pressable onPress={() => setModalVisible(false)} style={styles.joinGroupModalContainer}>
+          
+          <Pressable>
+          <View style={styles.joinGroupModal}>  
             <View style={{flexDirection: "row",borderBottomWidth: 1, borderBottomColor: '#ccc',}}>
               <Text style={styles.joinGroupModalTitle}>Join a Group</Text>
             </View>
             <Text style={{ marginTop: 6 }}>Join a Group using the ID!</Text>
+            
+            {isGroupidEmpty && (
+            <Text style={{fontSize: 10, color: '#e05151'}}>Insert a group ID</Text>
+            )}
+
+            {errorFetchingGroup && (
+            <Text style={{fontSize: 10, color: '#e05151'}}>Check the code and try again</Text>
+            )}
+            
             <TextInput
-              // style={[ styles.modalInput, Platform.OS === 'web' && { outlineStyle: 'none' as any } ]}
               style={ styles.modalInput }
               placeholder="Group ID"
-              value={searchQuery}
-              onChangeText={handleSearch}
-              // underlineColorAndroid="transparent"
+              value={groupID}
+              onChangeText={setGroupID}
             />
             <View style={{flexDirection: "row"}}>
               <TouchableOpacity 
               style={styles.modalCreateGroup} 
               onPress={() => handleCreate()}
               >
-                <Text style={{textAlign: 'center', color: '#9c76c2'}}onPress={() => {handleJoin(); router.push("/create_group");}}>or create a group</Text>
+                <Text style={{textAlign: 'center', color: '#9c76c2'}}>or create a group</Text>
               </TouchableOpacity>
 
               <TouchableOpacity style={styles.modalButton} onPress={() => handleJoin()}>
@@ -139,14 +187,10 @@ const GroupsSearchTab = () => {
 
             </View>
           </View>
-        </View>
+          </Pressable>
+
+        </Pressable>
       </Modal>
-      
-      <FlatList
-        data={filteredData}
-        keyExtractor={item => item.group_id}
-        renderItem={ groupItem }
-      />
 
     </View>
   );
@@ -155,14 +199,11 @@ const GroupsSearchTab = () => {
 const styles = StyleSheet.create({
   backgroundImage: {
     position: 'absolute', 
-    // La centra respecto al contenedor padre
     top: 0, 
     left: 0, 
     bottom: 0, 
     right: 0,
-    // La opacidad la hace menos intrusiva
     opacity: 0.3, 
-    // Ajusta el tamaño de la imagen según tus necesidades:
     width: '100%', 
     height: '100%',
   },
@@ -170,62 +211,14 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     paddingTop: 30,
-    paddingHorizontal: 0,
+    paddingHorizontal: 20,
     backgroundColor: '#fff',
     position: 'relative',
-  },
-
-  searchAddContainer: {
-    flexDirection: 'row',
-    marginHorizontal: 20,
-  },
-  searchContainer: {
-    flex: 9,
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderColor: 'gray',
-    borderWidth: 1,
-    borderRadius: 20,
-    marginTop: 5,
-    marginBottom: 15,
-    paddingHorizontal: 5,
-  },
-  searchContainerFocused: {
-    borderColor: '#b300ffff', 
-    borderWidth: 2,
-    marginTop: 4,
-    marginBottom: 14,
-    paddingHorizontal: 4,
-  },
-  searchInput: {
-    height: 40,
-    borderRadius: 20,
-    paddingHorizontal: 10,
-    flex: 1,
-  },
-  searchIcon: {
-    marginRight: 10,
-  },
-
-  plusButton: {
-    backgroundColor: '#fff',
-    padding: 1,
-    margin: 5,
-    marginBottom: 20,
-    borderRadius: 20,
-    alignItems: 'center',
-    justifyContent: 'center',
-    flex: 1,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.3,
-    shadowRadius: 4,
   },
 
   listItemContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginHorizontal: 20,
   },
   button: {
     paddingVertical: 10,
