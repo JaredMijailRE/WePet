@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { StyleSheet, View, Pressable, Image, Text, SafeAreaView } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { PetStyler } from '@/components/pet-styler';
+import petService from '@/services/pet';
 
 type PetStyle = 'dog' | 'cat' | 'dragon' | 'duck';
 
@@ -12,15 +13,27 @@ export default function PetScreen() {
   const params = useLocalSearchParams();
   const groupId = (params.groupId as string) ?? 'unknown';
 
-  // Dummy pet state per group - replace with API integration
-  const [pet, setPet] = useState({ 
-    name: `Pet of ${groupId}`, 
-    level: 5, 
-    life: 78, 
-    food: 52, 
-    clean: 34,
-    style: 'dog' as PetStyle,
-  });
+  // pet state (fetched from backend)
+  const [pet, setPet] = useState<any | null>(null);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    let mounted = true;
+    async function load() {
+      setLoading(true);
+      try {
+        const data = await petService.getPetByGroup(groupId);
+        if (mounted) setPet(data);
+      } catch (e) {
+        // fallback to dummy if backend not available
+        if (mounted) setPet({ id: 'local-'+groupId, name: `Pet of ${groupId}`, level: 5, life: 78, food: 52, clean: 34, style: 'dog' });
+      } finally {
+        if (mounted) setLoading(false);
+      }
+    }
+    load();
+    return () => { mounted = false; };
+  }, [groupId]);
 
   return (
     <ThemedView style={styles.container}>
@@ -48,7 +61,7 @@ export default function PetScreen() {
         {/* Top Right Buttons (Settings & Activities) */}
         <View style={styles.topRightButtons}>
           <Pressable 
-            onPress={() => router.push(`/pet_service/group-settings?groupId=${groupId}`)} 
+            onPress={() => router.push(`/(pet_service)/group-settings?groupId=${groupId}`)} 
             style={styles.iconButton}
           >
             <Text style={styles.iconText}>⚙️</Text>
@@ -63,7 +76,7 @@ export default function PetScreen() {
 
         {/* Main Pet Area - Center */}
         <View style={styles.petCenterContainer}>
-          <PetStyler style={pet.style} size={180} />
+          {pet ? <PetStyler style={(pet.style ?? 'dog') as PetStyle} size={180} /> : <PetStyler style={'dog'} size={180} />}
         </View>
 
         {/* Right Progress Indicators */}
@@ -73,7 +86,7 @@ export default function PetScreen() {
             <View style={[styles.circleProgress, { borderColor: '#ffd166' }]}>
               <Text style={styles.progressIcon}>🍗</Text>
             </View>
-            <ThemedText style={styles.progressValue}>{Math.round(pet.food)}%</ThemedText>
+            <ThemedText style={styles.progressValue}>{Math.round(pet?.food ?? 0)}%</ThemedText>
           </View>
 
           {/* Life */}
@@ -81,7 +94,7 @@ export default function PetScreen() {
             <View style={[styles.circleProgress, { borderColor: '#ff6b6b' }]}>
               <Text style={styles.progressIcon}>❤️</Text>
             </View>
-            <ThemedText style={styles.progressValue}>{Math.round(pet.life)}%</ThemedText>
+            <ThemedText style={styles.progressValue}>{Math.round(pet?.life ?? 0)}%</ThemedText>
           </View>
 
           {/* Clean */}
@@ -89,8 +102,46 @@ export default function PetScreen() {
             <View style={[styles.circleProgress, { borderColor: '#74c0fc' }]}>
               <Text style={styles.progressIcon}>🧼</Text>
             </View>
-            <ThemedText style={styles.progressValue}>{Math.round(pet.clean)}%</ThemedText>
+            <ThemedText style={styles.progressValue}>{Math.round(pet?.clean ?? 0)}%</ThemedText>
           </View>
+        </View>
+        
+        {/* Action Buttons (Feed / Clean / Play) */}
+        <View style={styles.actionsRow}>
+          <Pressable style={styles.actionBtn} onPress={async () => {
+            if (!pet) return;
+            try {
+              const updated = await petService.performPetAction(pet.id, 'feed');
+              setPet(updated);
+            } catch (e) {
+              // optimistic local update fallback
+              setPet((p:any) => ({ ...p, food: Math.min(100, (p?.food ?? 0) + 10) }));
+            }
+          }}>
+            <ThemedText>Feed</ThemedText>
+          </Pressable>
+          <Pressable style={styles.actionBtn} onPress={async () => {
+            if (!pet) return;
+            try {
+              const updated = await petService.performPetAction(pet.id, 'clean');
+              setPet(updated);
+            } catch (e) {
+              setPet((p:any) => ({ ...p, clean: Math.min(100, (p?.clean ?? 0) + 10) }));
+            }
+          }}>
+            <ThemedText>Clean</ThemedText>
+          </Pressable>
+          <Pressable style={styles.actionBtn} onPress={async () => {
+            if (!pet) return;
+            try {
+              const updated = await petService.performPetAction(pet.id, 'play');
+              setPet(updated);
+            } catch (e) {
+              setPet((p:any) => ({ ...p, life: Math.min(100, (p?.life ?? 0) + 5), happiness: Math.min(100, (p?.happiness ?? 0) + 10) }));
+            }
+          }}>
+            <ThemedText>Play</ThemedText>
+          </Pressable>
         </View>
       </SafeAreaView>
     </ThemedView>
@@ -227,6 +278,30 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     marginTop: 4,
     color: '#666',
+  },
+  actionsRow: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 36,
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    alignItems: 'center',
+    paddingHorizontal: 24,
+    zIndex: 20,
+  },
+  actionBtn: {
+    backgroundColor: 'rgba(255,255,255,0.95)',
+    paddingVertical: 10,
+    paddingHorizontal: 18,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOpacity: 0.08,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 3,
+    minWidth: 80,
   },
 });
 

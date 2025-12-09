@@ -1,0 +1,41 @@
+const DEFAULT_BASE = process.env.PET_API_URL ?? process.env.EXPO_PUBLIC_PET_API_URL ?? 'http://localhost';
+
+function buildUrl(path: string) {
+  // allow base like http://localhost:8000 or /api
+  return `${DEFAULT_BASE.replace(/\/+$/,'')}/${path.replace(/^\/+/, '')}`;
+}
+
+export async function getPetByGroup(groupId: string) {
+  const url = buildUrl(`/pets/group/${encodeURIComponent(groupId)}`);
+  const res = await fetch(url, { method: 'GET' });
+  if (!res.ok) throw new Error(`Failed to fetch pet: ${res.status}`);
+  return res.json();
+}
+
+export async function performPetAction(petId: string, action: 'feed' | 'clean' | 'play') {
+  const url = buildUrl(`/pets/${encodeURIComponent(petId)}/actions/${action}`);
+  const res = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' } });
+  if (!res.ok) throw new Error(`Action ${action} failed: ${res.status}`);
+  return res.json();
+}
+
+export async function updatePetStatus(petId: string, body: Record<string, any>) {
+  const url = buildUrl(`/pets/${encodeURIComponent(petId)}`);
+  const res = await fetch(url, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+  if (!res.ok) throw new Error(`Update pet failed: ${res.status}`);
+  return res.json();
+}
+
+export async function createPet(groupId: string, name: string, type: string) {
+  const url = buildUrl(`/pets`);
+  const res = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ group_id: groupId, name, type }) });
+  if (!res.ok) throw new Error(`Create pet failed: ${res.status}`);
+  return res.json();
+}
+
+export default {
+  getPetByGroup,
+  performPetAction,
+  updatePetStatus,
+  createPet,
+};
