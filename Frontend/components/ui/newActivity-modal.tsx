@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {Picker} from '@react-native-picker/picker'
 import DateTimePicker from '@react-native-community/datetimepicker'
 import {
@@ -6,6 +6,13 @@ import {
     KeyboardAvoidingView, Platform, Pressable,
     TouchableOpacity
 } from 'react-native';
+
+import { useGroups } from '@/hooks';
+
+interface GroupItem {
+    id: string; 
+    name: string;
+  }
 
 interface ActivityForm {
     group: string;
@@ -20,18 +27,12 @@ interface CreateActivityModalProps {
     onSubmit: (data: ActivityForm) => void;
 }
 
-const groups = [
-    {id: 1, name:'Group 1'}, 
-    {id: 2, name:'Group 2'},
-    {id: 3, name:'Group 3'},
-    {id: 4, name:'Group 4'},
-    {id: 5, name:'Group 5'},
-];
-
 const CreateActivityModal = ({ visible, onClose, onSubmit }: CreateActivityModalProps) => {
+    const [groupsData,    setGroupsData]    = useState<GroupItem[]>([]);
     const [selectedGroup, setSelectedGroup] = useState('-');
-    const [date,          setDate]          = useState(new Date(2025, 11, 5));
-    const [show,          setShow]          = useState(false);
+    const [date,          setDate]          = useState(new Date());
+    const [showDateP,     setshowDateP]     = useState(false);
+    const [isTitleEmpty,  setIsTitleEmpty]  = useState(false)
     const [formData,      setFormData]      = useState<ActivityForm>({
         group: '',
         title: '',
@@ -39,24 +40,52 @@ const CreateActivityModal = ({ visible, onClose, onSubmit }: CreateActivityModal
         deadline: '', 
     });
     
+    const { listUserGroups, loading, error } = useGroups();
+
+    const loadMyGroups = async () => {
+        try {
+            const groups = await listUserGroups();
+            console.log('My groups:', groups);
+
+            const transformedGroups: GroupItem[] = groups.map(group => ({
+            id: group.id,
+            name: group.name
+            }));
+
+            setGroupsData(transformedGroups);
+        } catch (err) {
+            console.error('Error loading groups:', err);
+        }
+    };
+
+    // Load groups when component mounts
+    useEffect(() => {
+        loadMyGroups();
+    }, []);
+
     const handleChange = (name: keyof ActivityForm, value: string) => {
         setFormData(prev => ({ ...prev, [name]: value }));
     };
 
     const onChange = (event: any, selectedDate: any) => {
         const currentDate = selectedDate;
-        setShow(false);
+        setshowDateP(false);
         setDate(currentDate);
     };
 
     const showDatepicker = () => {
-        setShow(!show);
+        setshowDateP(!showDateP);
     };
 
     const handleSubmit = () => {
-        onSubmit(formData);
-        setFormData({ group: '-', title: '', description: '', deadline: '' });
-        setShow(false);
+        if(formData.title === ''){
+            setIsTitleEmpty(true);
+        } else {
+            onSubmit(formData);
+            setFormData({ group: '-', title: '', description: '', deadline: '' });
+            setshowDateP(false);
+            setIsTitleEmpty(false);
+        }
     };
 
     return (
@@ -82,12 +111,15 @@ const CreateActivityModal = ({ visible, onClose, onSubmit }: CreateActivityModal
                     onValueChange={(itemValue, itemIndex) => setSelectedGroup(itemValue)}
                     style={styles.groupPicker}
                 >
-                    {groups.map((group, index) => (
+                    {groupsData.map((group, index) => (
                         <Picker.Item key={index} label={group.name} value={group.id} />
                     ))}
                 </Picker>
                 </View>
 
+                {isTitleEmpty && (
+                    <Text style={{fontSize: 10, color: '#e05151', marginTop: 10}}>The Activity Needs a Title</Text>
+                )}
                 <View style={{ flexDirection: 'row', marginBottom: 5, alignItems: 'center' }}>
                 <Text style={styles.label}>Title:</Text>
                 <TextInput
@@ -112,7 +144,7 @@ const CreateActivityModal = ({ visible, onClose, onSubmit }: CreateActivityModal
                     <Text style={{ color: '#000' }}> {date.toLocaleDateString()} </Text>
                 </Pressable>
                 </View>
-                {show && (
+                {showDateP && (
                     <DateTimePicker
                     value={date}
                     mode={'date'}
@@ -123,7 +155,7 @@ const CreateActivityModal = ({ visible, onClose, onSubmit }: CreateActivityModal
                 <View style={{flexDirection: "row", marginTop: 15}}>
                     <View style={{ flex: 2 }}/>
 
-                    <TouchableOpacity style={styles.closeButton} onPress={() => onClose()} >
+                    <TouchableOpacity style={styles.closeButton} onPress={() => {setIsTitleEmpty(false); onClose()}} >
                     <Text style={{textAlign: 'center', color: '#9c76c2'}}>cancel</Text>
                     </TouchableOpacity>
     

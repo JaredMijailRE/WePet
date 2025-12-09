@@ -88,7 +88,6 @@ export default function Index() {
 
   // this part is related to the new activity modal
   const addActivity = () => {
-    console.log("en el modal, realizar busqueda de grupos")
     setNewActivityModalVisible(true)
   }
 
