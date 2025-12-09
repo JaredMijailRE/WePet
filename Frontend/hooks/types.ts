@@ -126,3 +126,8 @@ export interface ApiError {
   details?: any;
 }
 
+export interface EmotionRestponseDTO {
+  user_id: string;
+  emotion: string;
+  created_at: string; // ISO date string
+} 

@@ -9,26 +9,10 @@ import GroupMoodCard, { Group } from '../../components/group-mood-card';
 import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import {
-  postMood,
-  getGroupMoods,
-  getUserGroups,
-  BackendMember,
-  BackendGroup,
-} from '../(mood)/sharing-service';
+import { useSharing } from '@/hooks/useSharing';
+import { EmotionRestponseDTO } from '@/hooks/types';
 
-// Por ahora dejamos un grupo “por defecto” mientras funciona el getUserGroups()
-const BACKEND_GROUP_ID = "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11";
-
-const MOCK_GROUPS: Group[] = [
-  {
-    id: BACKEND_GROUP_ID,
-    name: 'Grupo de prueba',
-    members: []
-  },
-];
-
-function mapBackendMembers(backendMembers: BackendMember[]): Group["members"] {
+function mapBackendMembers(backendMembers: EmotionRestponseDTO[]): Group['members'] {
   return backendMembers.map((m, index) => ({
     id: m.user_id,
     name: `User ${index + 1}`,
@@ -41,39 +25,53 @@ export default function MoodScreen() {
   const [selectedMood, setSelectedMood] = useState<MoodName | null>(null);
   const [selectedGroup, setSelectedGroup] = useState<Group | null>(null);
 
-  const [backendGroupMembers, setBackendGroupMembers] = useState<Group['members']>([]);
+  const [groups, setGroups] = useState<Group[]>([]);
 
   const tabBarHeight = useBottomTabBarHeight();
   const insets = useSafeAreaInsets();
 
+  const {
+    getMoodsForUserGroups,
+    postMoodToUserGroups,
+    loading,
+    error,
+  } = useSharing();
+
   useEffect(() => {
     async function load() {
       try {
-        // 👉 aquí podrías usar getUserGroups() para saber los grupos del usuario:
-        // const userGroups = await getUserGroups();
-        // console.log('Grupos del usuario:', userGroups);
+        const data = await getMoodsForUserGroups();
+        // data: { group: GroupResponseDTO; moods: EmotionRestponseDTO[] }[]
 
-        const data = await getGroupMoods(BACKEND_GROUP_ID);
-        console.log('Respuesta cruda del backend:', data);
-        setBackendGroupMembers(mapBackendMembers(data));
+        const mappedGroups: Group[] = data.map(({ group, moods }) => ({
+          id: group.id,
+          name: group.name,
+          members: mapBackendMembers(moods),
+        }));
+
+        setGroups(mappedGroups);
       } catch (e) {
-        console.error('Error cargando moods del grupo', e);
+        console.error('Error cargando moods de los grupos', e);
       }
     }
+
     load();
-  }, []);
+  }, [getMoodsForUserGroups]);
 
   const handleSelectMood = async (mood: MoodName) => {
     try {
       setSelectedMood(mood);
       console.log('Mood seleccionado:', mood);
-      await postMood(
-        [BACKEND_GROUP_ID],
-         mood ,
-      );
 
-      const data = await getGroupMoods(BACKEND_GROUP_ID);
-      setBackendGroupMembers(mapBackendMembers(data));
+      await postMoodToUserGroups(mood);
+
+      const data = await getMoodsForUserGroups();
+      const mappedGroups: Group[] = data.map(({ group, moods }) => ({
+        id: group.id,
+        name: group.name,
+        members: mapBackendMembers(moods),
+      }));
+      setGroups(mappedGroups);
     } catch (e) {
       console.error('Error al enviar el mood', e);
     }
@@ -86,28 +84,25 @@ export default function MoodScreen() {
           contentContainerStyle={styles.scrollContent}
         >
           <Text style={styles.title}>Moods</Text>
-          
-          {MOCK_GROUPS.map(group => {
-            const isBackendGroup = group.id === BACKEND_GROUP_ID;
 
-            const groupData: Group = isBackendGroup
-              ? {
-                  ...group,
-                  members: backendGroupMembers.length
-                    ? backendGroupMembers
-                    : group.members,
-                }
-              : group;
+          {groups.length === 0 && !loading && (
+            <Text>No tienes grupos todavía.</Text>
+          )}
 
-            return (
-              <GroupMoodCard
-                key={groupData.id}
-                group={groupData}
-                maxVisible={6}
-                onPressOverflow={g => setSelectedGroup(g)}
-              />
-            );
-          })}
+          {groups.map(group => (
+            <GroupMoodCard
+              key={group.id}
+              group={group}
+              maxVisible={6}
+              onPressOverflow={g => setSelectedGroup(g)}
+            />
+          ))}
+
+          {error && (
+            <Text style={{ color: 'red', marginTop: 8 }}>
+              Ocurrió un error al cargar la información.
+            </Text>
+          )}
         </ScrollView>
       </View>
 

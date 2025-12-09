@@ -1,8 +1,7 @@
-// components/GroupMoodCard.tsx
-import React from 'react';
+
+import React, { useMemo } from 'react';
 import { View, Text, StyleSheet, Image, Pressable } from 'react-native';
 import { MoodName, moodConfig } from '../assets/moodAssets';
-
 
 export type GroupMember = {
   id: string;
@@ -20,37 +19,64 @@ type Props = {
   group: Group;
   maxVisible?: number;
   onPressOverflow?: (group: Group) => void;
+  /** id del usuario actual para ordenarlo primero y mostrar "You" */
+  currentUserId?: string;
 };
 
 export default function GroupMoodCard({
   group,
   maxVisible,
   onPressOverflow,
+  currentUserId,
 }: Props) {
   const members = group.members;
   const hasLimit = typeof maxVisible === 'number';
 
-  const showOverflow = hasLimit && members.length > maxVisible!;
-  const visibleMembers = showOverflow ? members.slice(0, maxVisible! - 1) : members;
-  const extraCount = showOverflow ? members.length - (maxVisible! - 1) : 0;
+  // 🧠 Ordenar miembros: el usuario actual primero
+  const orderedMembers = useMemo(() => {
+    if (!currentUserId) return members;
+
+    return [...members].sort((a, b) => {
+      const aIsMe = a.id === currentUserId;
+      const bIsMe = b.id === currentUserId;
+
+      if (aIsMe && !bIsMe) return -1;
+      if (!aIsMe && bIsMe) return 1;
+      return 0;
+    });
+  }, [members, currentUserId]);
+
+  const showOverflow = hasLimit && orderedMembers.length > maxVisible!;
+  const visibleMembers = showOverflow
+    ? orderedMembers.slice(0, maxVisible! - 1)
+    : orderedMembers;
+
+  const extraCount = showOverflow
+    ? orderedMembers.length - (maxVisible! - 1)
+    : 0;
 
   return (
     <View style={styles.card}>
-    {/*Header */}
+      {/* Header */}
       <View style={styles.headerRow}>
         <Text style={styles.groupName}>{group.name}</Text>
         <Text style={styles.countText}>{members.length} miembros</Text>
       </View>
 
-      {/*Grid */}
+      {/* Grid */}
       <View style={styles.grid}>
         {visibleMembers.map(member => {
           const config = moodConfig[member.mood];
+          const isMe = currentUserId && member.id === currentUserId;
 
           return (
             <View key={member.id} style={styles.memberItem}>
-              <View style={
-                [styles.moodCircle, { backgroundColor: config.color }]}>
+              <View
+                style={[
+                  styles.moodCircle,
+                  { backgroundColor: config.color },
+                ]}
+              >
                 <Image
                   source={config.image}
                   style={styles.moodImage}
@@ -58,7 +84,7 @@ export default function GroupMoodCard({
                 />
               </View>
               <Text style={styles.memberName} numberOfLines={1}>
-                {member.name}
+                {isMe ? 'You' : member.name}
               </Text>
             </View>
           );
