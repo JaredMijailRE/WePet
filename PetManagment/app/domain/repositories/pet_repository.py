@@ -8,5 +8,13 @@ class PetRepository(ABC):
         pass
 
     @abstractmethod
+    def update(self, pet: Pet) -> Pet:
+        pass
+
+    @abstractmethod
     def find_by_group_id(self, group_id: uuid.UUID) -> Pet | None:
+        pass
+
+    @abstractmethod
+    def find_one(self) -> Pet | None:
         pass

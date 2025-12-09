@@ -13,3 +13,10 @@ class PetResponseDTO(BaseModel):
     type: PetType
     health_level: int
     happiness_level: int
+    hunger_level: int
+    hygiene_level: int
+    level: int
+    xp: int
+
+class PetNameUpdateDTO(BaseModel):
+    name: str
