@@ -12,7 +12,7 @@ class CreateGroupUseCase:
     def execute(self, data: GroupCreateDTO, user_id: uuid.UUID) -> GroupResponseDTO:
         # Generar ID y Código de Invitación (UUIDv7)
         group_id = uuid.uuid4()
-        invite_code = str(uuid6.uuid7())
+        invite_code = str(group_id)[0:6]
 
         new_group = Group(id=group_id, name=data.name, invite_code=invite_code)
 

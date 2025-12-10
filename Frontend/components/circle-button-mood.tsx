@@ -1,11 +1,11 @@
 import React from 'react';
 import { View, Pressable, StyleSheet, Image } from 'react-native';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
-import { Mood, moodConfig } from '../assets/moodAssets';
+import { MoodName, moodConfig } from '../assets/moodAssets';
 
 type Props = {
   onPress: () => void;
-  mood?: Mood | null; // opcional
+  mood?: MoodName | null; // opcional
 };
 
 export default function CircleButton({ onPress, mood }: Props) {

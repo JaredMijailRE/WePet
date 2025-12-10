@@ -9,27 +9,37 @@ class ManageEmotionsUseCase:
     def __init__(self, repository: EmotionalRepository):
         self.repository = repository
 
-    def register_mood(self, user_id: uuid.UUID, data: CreateEmotionDTO) -> EmotionResponseDTO:
-        new_report = EmotionalReport(
-            id=uuid.uuid4(),
-            user_id=user_id,
-            group_id=data.group_id,
-            status_name=data.emotion,
-            created_at=datetime.now(timezone.utc)
-        )
-        self.repository.save(new_report)
-        
-        return EmotionResponseDTO(
-            user_id=new_report.user_id,
-            emotion=new_report.status_name,
-            created_at=new_report.created_at
-        )
+    def register_mood(self, user_id: uuid.UUID, data: CreateEmotionDTO) -> List[EmotionResponseDTO]:
+        responses = []
+        current_time = datetime.now(timezone.utc)
+        for group_id in data.group_ids:
+            new_report = EmotionalReport(
+                id=uuid.uuid4(),
+                user_id=user_id,
+                group_id=group_id,
+                status_name=data.emotion,
+                created_at=datetime.now(timezone.utc)
+            )
+            self.repository.save(new_report)
+            responses.append(
+                EmotionResponseDTO(
+                    id=new_report.id,
+                    user_id=new_report.user_id,
+                    group_id=new_report.group_id,
+                    emotion=new_report.status_name,
+                    created_at=new_report.created_at
+                )
+            )
+        return responses
+
 
     def get_group_moodboard(self, group_id: uuid.UUID) -> List[EmotionResponseDTO]:
         reports = self.repository.get_latest_moods_by_group(group_id)
         
         return [
             EmotionResponseDTO(
+                id=r.id,
+                group_id=r.group_id,
                 user_id=r.user_id,
                 emotion=r.status_name,
                 created_at=r.created_at

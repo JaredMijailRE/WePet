@@ -18,19 +18,15 @@ class GroupRepository(ABC):
         pass
 
     @abstractmethod
-    def add_member(self, group_id: uuid.UUID, user_id: uuid.UUID, role: str):
-        pass
-    
-    @abstractmethod
-    def is_member(self, group_id: uuid.UUID, user_id: uuid.UUID) -> bool:
-        pass
-
-    @abstractmethod
     def update_name(self, group_id: uuid.UUID, name: str) -> Group | None:
         pass
 
     @abstractmethod
     def delete(self, group_id: uuid.UUID) -> bool:
+        pass
+
+    @abstractmethod
+    def add_member(self, group_id: uuid.UUID, user_id: uuid.UUID, role: str):
         pass
 
     @abstractmethod
@@ -48,7 +44,15 @@ class GroupRepository(ABC):
     @abstractmethod
     def remove_member(self, group_id: uuid.UUID, user_id: uuid.UUID) -> bool:
         pass
-    
+
+    @abstractmethod
+    def is_member(self, group_id: uuid.UUID, user_id: uuid.UUID) -> bool:
+        pass
+
+    @abstractmethod
+    def find_groups_by_user_id(self, user_id: uuid.UUID) -> List[Group]:
+        pass
+
     @abstractmethod
     def save_activity(self, activity: Activity) -> Activity:
         pass
@@ -59,6 +63,10 @@ class GroupRepository(ABC):
 
     @abstractmethod
     def list_activities_by_group(self, group_id: uuid.UUID) -> List[Activity]:
+        pass
+
+    @abstractmethod
+    def list_activities_by_user(self, user_id: uuid.UUID) -> List[Activity]:
         pass
 
     @abstractmethod

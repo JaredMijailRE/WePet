@@ -1,89 +1,95 @@
 // app/(main_nav)/mood.tsx
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, StyleSheet, ScrollView, Text, Modal, Pressable } from 'react-native';
+
 import MoodPickerModal from '../../components/mood-picker-modal';
 import CircleButton from '../../components/circle-button-mood';
-import { Mood } from '../../assets/moodAssets';
+import { MoodName } from '../../assets/moodAssets';
 import GroupMoodCard, { Group } from '../../components/group-mood-card';
 import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-const MOCK_GROUPS: Group[] = [
-  {
-    id: 'g1',
-    name: 'Group 1',
-    members: [],
-  },
-  {
-    id: 'g2',
-    name: 'Group 2',
-    members: [
-      { id: '1', name: 'Name 5', mood: 'jealous' },
-      { id: '2', name: 'Name 6', mood: 'loved' },
-      { id: '3', name: 'Name 1', mood: 'happy' },
-      { id: '4', name: 'Name 2', mood: 'sad' },
-      { id: '5', name: 'Name 3', mood: 'excited' },
-      { id: '6', name: 'Name 4', mood: 'calm' },
-      { id: '7', name: 'Name 1', mood: 'happy' },
-      { id: '8', name: 'Name 2', mood: 'sad' },
-      { id: '9', name: 'Name 3', mood: 'excited' },
-      { id: '10', name: 'Name 4', mood: 'calm' },
-      { id: '11', name: 'Name 1', mood: 'happy' },
-      { id: '12', name: 'Name 2', mood: 'sad' },
-      { id: '13', name: 'Name 3', mood: 'excited' },
-      { id: '14', name: 'Name 4', mood: 'calm' },
-    ],
-  },
-  {
-    id: 'g3',
-    name: 'Group 3',
-    members: [
-      { id: '5', name: 'Name 5', mood: 'worried' },
-      { id: '6', name: 'Name 6', mood: 'loved' },
-      { id: '7', name: 'Name 4', mood: 'calm' },
-      { id: '8', name: 'Name 5', mood: 'worried' },
-      { id: '9', name: 'Name 6', mood: 'loved' },
-      { id: '10', name: 'Name 4', mood: 'calm' },
-    ],
-  },
-  {
-    id: 'g4',
-    name: 'Group 4',
-    members: [
-      { id: '5', name: 'Name 5', mood: 'worried' },
-      { id: '6', name: 'Name 6', mood: 'loved' },
-      { id: '7', name: 'Name 4', mood: 'calm' },
-      { id: '8', name: 'Name 5', mood: 'worried' },
-      { id: '9', name: 'Name 6', mood: 'loved' },
-      { id: '10', name: 'Name 4', mood: 'calm' },
-      { id: '10', name: 'Name 4', mood: 'calm' },
-    ],
-  },
-];
+import { useSharing } from '@/hooks/useSharing';
+import { EmotionRestponseDTO } from '@/hooks/types';
+
+function mapBackendMembers(backendMembers: EmotionRestponseDTO[]): Group['members'] {
+  return backendMembers.map((m, index) => ({
+    id: m.user_id,
+    name: `User ${index + 1}`,
+    mood: m.emotion as MoodName,
+  }));
+}
 
 export default function MoodScreen() {
   const [isModalVisible, setModalVisible] = useState(false);
-  const [selectedMood, setSelectedMood] = useState<Mood | null>(null);
+  const [selectedMood, setSelectedMood] = useState<MoodName | null>(null);
   const [selectedGroup, setSelectedGroup] = useState<Group | null>(null);
+
+  const [groups, setGroups] = useState<Group[]>([]);
 
   const tabBarHeight = useBottomTabBarHeight();
   const insets = useSafeAreaInsets();
 
-  const handleSelectMood = (mood: Mood) => {
-    setSelectedMood(mood);
-    // Aquí va el back
+  const {
+    getMoodsForUserGroups,
+    postMoodToUserGroups,
+    loading,
+    error,
+  } = useSharing();
+
+  useEffect(() => {
+    async function load() {
+      try {
+        const data = await getMoodsForUserGroups();
+        // data: { group: GroupResponseDTO; moods: EmotionRestponseDTO[] }[]
+
+        const mappedGroups: Group[] = data.map(({ group, moods }) => ({
+          id: group.id,
+          name: group.name,
+          members: mapBackendMembers(moods),
+        }));
+
+        setGroups(mappedGroups);
+      } catch (e) {
+        console.error('Error cargando moods de los grupos', e);
+      }
+    }
+
+    load();
+  }, [getMoodsForUserGroups]);
+
+  const handleSelectMood = async (mood: MoodName) => {
+    try {
+      setSelectedMood(mood);
+      console.log('Mood seleccionado:', mood);
+
+      await postMoodToUserGroups(mood);
+
+      const data = await getMoodsForUserGroups();
+      const mappedGroups: Group[] = data.map(({ group, moods }) => ({
+        id: group.id,
+        name: group.name,
+        members: mapBackendMembers(moods),
+      }));
+      setGroups(mappedGroups);
+    } catch (e) {
+      console.error('Error al enviar el mood', e);
+    }
   };
 
   return (
     <View style={styles.container}>
-      {/* Contenido scrolleable */}
       <View style={styles.content}>
         <ScrollView
           contentContainerStyle={styles.scrollContent}
         >
           <Text style={styles.title}>Moods</Text>
 
-          {MOCK_GROUPS.map(group => (
+          {groups.length === 0 && !loading && (
+            <Text>No tienes grupos todavía.</Text>
+          )}
+
+          {groups.map(group => (
             <GroupMoodCard
               key={group.id}
               group={group}
@@ -91,10 +97,15 @@ export default function MoodScreen() {
               onPressOverflow={g => setSelectedGroup(g)}
             />
           ))}
+
+          {error && (
+            <Text style={{ color: 'red', marginTop: 8 }}>
+              Ocurrió un error al cargar la información.
+            </Text>
+          )}
         </ScrollView>
       </View>
 
-      {/* Botón en footer fijo abajo, sin absolute */}
       <View
         style={[
           styles.bottomArea,
@@ -122,9 +133,7 @@ export default function MoodScreen() {
         <View style={styles.backdrop}>
           <View style={styles.modalBox}>
             {selectedGroup && (
-              <>
-                <GroupMoodCard group={selectedGroup} />
-              </>
+              <GroupMoodCard group={selectedGroup} />
             )}
           </View>
           <Pressable
@@ -163,25 +172,6 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0,0,0,0.35)',
     justifyContent: 'center',
     alignItems: 'center',
-  },
-  modalHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  modalTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-  },
-  closeText: {
-    fontSize: 20,
-  },
-  closeButtonWrapper: {
-    position: 'absolute',
-    top: 12,
-    right: 16,
-    zIndex: 1,
   },
   modalBox: {
     width: '90%',

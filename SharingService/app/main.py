@@ -3,6 +3,7 @@ from fastapi.middleware.trustedhost import TrustedHostMiddleware
 from app.interface.http.routers import router
 from app.adapter.db.database import engine, SessionLocal
 from app.adapter.db import models
+from fastapi.middleware.cors import CORSMiddleware
 
 
 models.Base.metadata.create_all(bind=engine)
@@ -13,7 +14,8 @@ def seed_emotions():
         emotions = [
             "happy", "excited", "calm", "tired",
             "proud", "jealous", "worried", "sad",
-            "surprised", "scared", "shy", "angry"
+            "surprised", "scared", "shy", "angry",
+            "silly", "bored", "loved", "confused"
         ]
         for emotion_name in emotions:
             exists = db.query(models.EmotionalStatus).filter_by(name=emotion_name).first()
@@ -28,6 +30,21 @@ def seed_emotions():
         
 seed_emotions()
 app = FastAPI(root_path="/sharing")
+
+
+origins = [
+    "http://localhost:8081",  # Expo web
+    "http://localhost:19006", # Expo web típica
+    "http://localhost:19000", # otra variante
+    "http://localhost",       # por si acaso
+]
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  
+    allow_credentials=False,
+    allow_methods=["*"],  # Permitir GET, POST, PUT, DELETE
+    allow_headers=["*"],  # Permitir Authorization, Content-Type
+)
 
 app.add_middleware(
     TrustedHostMiddleware, allowed_hosts=["*"]

@@ -1,12 +1,12 @@
-// components/GroupMoodCard.tsx
-import React from 'react';
-import { View, Text, StyleSheet, Image, Pressable} from 'react-native';
-import { Mood, moodConfig } from '../assets/moodAssets';
+
+import React, { useMemo } from 'react';
+import { View, Text, StyleSheet, Image, Pressable } from 'react-native';
+import { MoodName, moodConfig } from '../assets/moodAssets';
 
 export type GroupMember = {
   id: string;
   name: string;
-  mood: Mood;
+  mood: MoodName;
 };
 
 export type Group = {
@@ -19,24 +19,43 @@ type Props = {
   group: Group;
   maxVisible?: number;
   onPressOverflow?: (group: Group) => void;
+  /** id del usuario actual para ordenarlo primero y mostrar "You" */
+  currentUserId?: string;
 };
 
-export default function GroupMoodCard({ 
-    group,
-    maxVisible,
-    onPressOverflow, 
+export default function GroupMoodCard({
+  group,
+  maxVisible,
+  onPressOverflow,
+  currentUserId,
 }: Props) {
-    const hasLimit = typeof maxVisible === 'number';
-    const members = group.members;
+  const members = group.members;
+  const hasLimit = typeof maxVisible === 'number';
 
-    const showOverflow = hasLimit && members.length > maxVisible!;
-    const visibleMembers = showOverflow
-        ? members.slice(0, maxVisible! - 1) 
-        : members;
+  // 🧠 Ordenar miembros: el usuario actual primero
+  const orderedMembers = useMemo(() => {
+    if (!currentUserId) return members;
 
-    const extraCount = showOverflow ? members.length - (maxVisible! - 1) : 0;
-    
-    return (
+    return [...members].sort((a, b) => {
+      const aIsMe = a.id === currentUserId;
+      const bIsMe = b.id === currentUserId;
+
+      if (aIsMe && !bIsMe) return -1;
+      if (!aIsMe && bIsMe) return 1;
+      return 0;
+    });
+  }, [members, currentUserId]);
+
+  const showOverflow = hasLimit && orderedMembers.length > maxVisible!;
+  const visibleMembers = showOverflow
+    ? orderedMembers.slice(0, maxVisible! - 1)
+    : orderedMembers;
+
+  const extraCount = showOverflow
+    ? orderedMembers.length - (maxVisible! - 1)
+    : 0;
+
+  return (
     <View style={styles.card}>
       {/* Header */}
       <View style={styles.headerRow}>
@@ -47,9 +66,10 @@ export default function GroupMoodCard({
       {/* Grid */}
       <View style={styles.grid}>
         {visibleMembers.map(member => {
-        const config = moodConfig[member.mood as Mood];
+          const config = moodConfig[member.mood];
+          const isMe = currentUserId && member.id === currentUserId;
 
-        return (
+          return (
             <View key={member.id} style={styles.memberItem}>
               <View
                 style={[
@@ -64,7 +84,7 @@ export default function GroupMoodCard({
                 />
               </View>
               <Text style={styles.memberName} numberOfLines={1}>
-                {member.name}
+                {isMe ? 'You' : member.name}
               </Text>
             </View>
           );
@@ -80,7 +100,6 @@ export default function GroupMoodCard({
             </View>
           </Pressable>
         )}
-
       </View>
     </View>
   );
@@ -115,7 +134,7 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   memberItem: {
-    width: '25%', // 4 por fila
+    width: '25%',
     alignItems: 'center',
     marginBottom: 12,
   },
