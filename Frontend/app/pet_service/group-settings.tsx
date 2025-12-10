@@ -1,10 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { StyleSheet, View, Text, ScrollView, Pressable, TextInput, Alert, SafeAreaView, Platform } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { PetStyler } from '@/components/pet-styler';
-import { useGroups } from '@/hooks';
+import { useGroups, useGroupMembers } from '@/hooks';
 import * as Clipboard from 'expo-clipboard';
 
 type PetStyle = 'dog' | 'cat' | 'dragon' | 'duck';
@@ -19,7 +19,8 @@ interface Member {
 export default function GroupSettings() {
   const router = useRouter();
   const params = useLocalSearchParams();
-  const {getGroupInviteCode, loading, error} = useGroups();
+  const {getGroupInviteCode, getGroup, updateGroup, loading, error} = useGroups();
+  const { listGroupMembers, getUserById } = useGroupMembers();
   const { groupId } = useLocalSearchParams<{ groupId: string }>();
 
   const handleShareGroup = async () => {
@@ -59,16 +60,96 @@ export default function GroupSettings() {
     }
   };
 
-  // Dummy group state
-  const [groupName, setGroupName] = useState('Group 1');
+  // Load group details when we have a groupId
+  useEffect(() => {
+    const load = async () => {
+      if (!groupId) return;
+      try {
+        const g = await getGroup(groupId);
+        if (g?.name) setGroupName(g.name);
+      } catch (err) {
+        console.error('Error loading group details:', err);
+      }
+    };
+
+    load();
+  }, [groupId]);
+
+  
+
+  // Group state
+  const [groupName, setGroupName] = useState('');
   const [isEditingName, setIsEditingName] = useState(false);
   const [petStyle, setPetStyle] = useState<PetStyle>('dog');
   
-  const [members, setMembers] = useState<Member[]>([
-    { id: '1', name: 'Alex (You)', role: 'Administrator', status: 'Status' },
-    { id: '2', name: 'Raul', role: 'Member', status: 'Status' },
-    { id: '3', name: 'Sam', role: 'Member', status: 'Status' },
-  ]);
+  const [members, setMembers] = useState<Member[]>([]);
+
+  // Load members when we have a groupId
+  useEffect(() => {
+    const loadMembers = async () => {
+      if (!groupId) {
+        console.log('No groupId available');
+        return;
+      }
+      try {
+        console.log('Loading members for groupId:', groupId);
+        // 1. Obtener lista de miembros del grupo (con IDs) usando useGroupMembers
+        const groupMembers = await listGroupMembers(groupId as string);
+        
+        // 2. Para cada miembro, obtener detalles del usuario por ID
+        const memberDetails: Member[] = [];
+        for (const gm of groupMembers || []) {
+          try {
+            const userId = (gm as any).user_id;
+            if (userId) {
+              try {
+                const userDetails = await getUserById(userId);
+                memberDetails.push({
+                  id: userId,
+                  name: userDetails.username,
+                  role: (gm as any).role === 'admin' ? 'Administrator' : 'Member',
+                  status: 'Member',
+                });
+              } catch (userErr) {
+                console.warn(`Error loading details for user ${userId}, using fallback:`, userErr);
+                // Fallback: use userId as name if getUserById fails
+                memberDetails.push({
+                  id: userId,
+                  name: `User ${userId.slice(0, 6)}`,
+                  role: (gm as any).role === 'admin' ? 'Administrator' : 'Member',
+                  status: 'Member',
+                });
+              }
+            }
+          } catch (err) {
+            console.warn(`Error processing member ${(gm as any).user_id}:`, err);
+          }
+        }
+        
+        console.log('Final memberDetails:', memberDetails);
+        setMembers(memberDetails);
+      } catch (err) {
+        console.error('Error loading group members:', err);
+      }
+    };
+
+    loadMembers();
+  }, [groupId, listGroupMembers]);
+
+  const handleSaveGroup = async () => {
+    if (!groupId) {
+      Alert.alert('Error', 'No se pudo obtener el ID del grupo');
+      return;
+    }
+
+    try {
+      await updateGroup(groupId, { name: groupName });
+      Alert.alert('Guardado', 'Nombre del grupo actualizado');
+    } catch (err) {
+      console.error('Error updating group name:', err);
+      Alert.alert('Error', error?.message || (err as any)?.message || 'No se pudo actualizar el nombre del grupo');
+    }
+  };
 
   const handleExitGroup = () => {
     Alert.alert(
@@ -129,7 +210,8 @@ export default function GroupSettings() {
                 style={styles.groupNameInput}
                 value={groupName}
                 onChangeText={setGroupName}
-                onBlur={() => setIsEditingName(false)}
+                onBlur={() => { setIsEditingName(false); handleSaveGroup(); }}
+                onSubmitEditing={() => { setIsEditingName(false); handleSaveGroup(); }}
                 autoFocus
               />
             ) : (

@@ -4,10 +4,11 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
   GroupMemberDTO,
   GroupMemberUpdateDTO,
+  UserResponseDTO,
   ApiError
 } from './types';
 
-const API_BASE_URL = 'http://localhost/groups'; // Adjust this to your backend URL
+const API_BASE_URL = 'http://localhost'; // Adjust this to your backend URL
 
 export const useGroupMembers = () => {
   const [loading, setLoading] = useState(false);
@@ -87,6 +88,17 @@ export const useGroupMembers = () => {
     }
   };
 
+  const getUserById = async (userId: string): Promise<UserResponseDTO> => {
+    setLoading(true);
+    setError(null);
+    try {
+      const response = await axiosInstance.get<UserResponseDTO>(`/users/${userId}`);
+      return response.data;
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const clearError = () => {
     setError(null);
   };
@@ -100,6 +112,7 @@ export const useGroupMembers = () => {
     listGroupMembers,
     updateGroupMember,
     removeGroupMember,
+    getUserById,
     clearError,
   };
 };
