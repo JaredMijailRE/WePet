@@ -18,16 +18,18 @@ class ManageEmotionsUseCase:
                 user_id=user_id,
                 group_id=group_id,
                 status_name=data.emotion,
+                user_name=data.user_name,
                 created_at=datetime.now(timezone.utc)
             )
-            self.repository.save(new_report)
+            saved_report = self.repository.save(new_report)
             responses.append(
                 EmotionResponseDTO(
-                    id=new_report.id,
-                    user_id=new_report.user_id,
-                    group_id=new_report.group_id,
-                    emotion=new_report.status_name,
-                    created_at=new_report.created_at
+                    id=saved_report.id,
+                    user_id=saved_report.user_id,
+                    user_name=saved_report.user_name,
+                    group_id=saved_report.group_id,
+                    emotion=saved_report.status_name,
+                    created_at=saved_report.created_at
                 )
             )
         return responses
@@ -39,6 +41,7 @@ class ManageEmotionsUseCase:
         return [
             EmotionResponseDTO(
                 id=r.id,
+                user_name=r.user_name,
                 group_id=r.group_id,
                 user_id=r.user_id,
                 emotion=r.status_name,

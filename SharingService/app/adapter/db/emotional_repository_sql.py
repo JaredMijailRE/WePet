@@ -27,6 +27,7 @@ class SQLEmotionalRepository(EmotionalRepository):
         db_report = EmotionalReportModel(
             id=report.id,
             user_id=report.user_id,
+            user_name=report.user_name,
             group_id=report.group_id,
             status_id=status_db.id,
             created_at=report.created_at
@@ -63,10 +64,12 @@ class SQLEmotionalRepository(EmotionalRepository):
         return [self._map_to_entity(r) for r in results]
 
     def _map_to_entity(self, model: EmotionalReportModel) -> EmotionalReport:
+        name_display = model.user_name if model.user_name else "Usuario"
         return EmotionalReport(
             id=model.id,
             user_id=model.user_id,
             group_id=model.group_id,
             status_name=model.status_rel.name, 
-            created_at=model.created_at
+            created_at=model.created_at,
+            user_name=name_display
         )

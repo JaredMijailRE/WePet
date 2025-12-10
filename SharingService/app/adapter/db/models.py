@@ -15,6 +15,8 @@ class EmotionalReportModel(Base):
     user_id = Column(UUID(as_uuid=True), nullable=False)
     group_id = Column(UUID(as_uuid=True), nullable=False, index=True)
 
+    user_name = Column(String(100), nullable=True)
+
     status_id = Column(Integer, ForeignKey("emotional_status.id"), nullable=False)
     
     created_at = Column(DateTime, default=datetime.now(timezone.utc))
