@@ -6,9 +6,10 @@ import ActivityCards from "@/components/ui/activitycard";
 import ActivityModal from "@/components/ui/activity-modal";
 import NewActivityModal from "@/components/ui/newActivity-modal";
 
-import { useActivities } from "@/hooks";
+import { ActivityStatus, useActivities } from "@/hooks";
 
 export interface ActivityItem {
+  id: string,
   title:string,
   group:string,
   exp: number,
@@ -20,7 +21,7 @@ export interface ActivityItem {
 export default function Index() {
   const backgroundImage = require('../../assets/images/backgroundImage.jpeg');
 
-  const { listUserActivities, loading, error } = useActivities();
+  const { listUserActivities, updateActivity, loading, error } = useActivities();
 
   const [activityData,            setActivityData]            = useState<ActivityItem[]>([]);
   const [searchQuery,             setSearchQuery]             = useState('');
@@ -36,6 +37,7 @@ export default function Index() {
       console.log('activities obtained: ', activities);
 
       const transformedActivities: ActivityItem[] = activities.map(activity => ({
+        id: activity.id,
         title: activity.title,
         group: activity.group_name,
         exp: activity.xp_reward,
@@ -46,6 +48,18 @@ export default function Index() {
 
       setActivityData(transformedActivities)
       setFilteredData(transformedActivities)
+    } catch (err) {
+      console.error('Error loading groups:', err);
+    }
+  }
+
+  const updateAnActivity = async (activity:ActivityItem) => {
+    try {
+      const res = await updateActivity(activity.id, {
+        "status": ActivityStatus.COMPLETED
+      })
+
+      loadMyActivities()
     } catch (err) {
       console.error('Error loading groups:', err);
     }
@@ -74,7 +88,6 @@ export default function Index() {
 
   // this part is related to the new activity modal
   const addActivity = () => {
-    console.log("en el modal, realizar busqueda de grupos")
     setNewActivityModalVisible(true)
   }
 
@@ -98,7 +111,7 @@ export default function Index() {
 
   // this is for the activity modal
   const handleUpdateActivity = (item: ActivityItem) => {
-    console.log("update the activity!!!")
+    updateAnActivity(item)
     setActivityModalVisible(false)
   }
 

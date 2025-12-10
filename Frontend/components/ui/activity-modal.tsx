@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Modal, View, Text, StyleSheet, TouchableWithoutFeedback, ScrollView, TextInput, TouchableOpacity } from 'react-native';
 import { ActivityItem } from '@/app/(main_nav)/activities';
 
@@ -10,7 +10,18 @@ interface ModalBaseProps {
 }
 
 const ActivityModal = ({ activity, visible, onClose, onUpdate }: ModalBaseProps) => {
+    const [activityContent, setActivityContent] = useState('')
+    const [isEmpty,         setIsEmpty]         = useState(false)
+
     const isFinished = activity.state === 'completed' || activity.state === 'expired'
+
+    const handleSubmitActivity = (activity: ActivityItem) => {
+        if (activityContent === ''){
+            setIsEmpty(true)
+        } else {
+            onUpdate(activity)
+        }
+    }
 
     return (
         <Modal
@@ -46,17 +57,26 @@ const ActivityModal = ({ activity, visible, onClose, onUpdate }: ModalBaseProps)
                 </View>
             
                 <ScrollView>
-                    <Text style={{ color: '#595959', fontSize: 12 } }>
+                    <Text style={{ color: '#595959', fontSize: 12, marginBottom: 10 } }>
                         {activity.description}
                     </Text> 
                 </ScrollView>
                 
                 {!isFinished && (
-                <TextInput 
-                style={styles.textInput}
-                placeholder='Write something...'
-                placeholderTextColor={'#595959'}
-                />
+                <View>
+
+                    {isEmpty && (
+                    <Text style={{ color: '#e05151', fontSize: 10 }}>Write Something....</Text>
+                    )}
+                    <TextInput 
+                    style={styles.textInput}
+                    placeholder='Write something...'
+                    placeholderTextColor={'#595959'}
+                    value = {activityContent}
+                    onChangeText={ setActivityContent }
+                    />
+
+                </View>
                 )}
                 
                 {!isFinished && (
@@ -67,7 +87,7 @@ const ActivityModal = ({ activity, visible, onClose, onUpdate }: ModalBaseProps)
                     <Text style={{textAlign: 'center', color: '#9c76c2'}}>cancel</Text>
                     </TouchableOpacity>
     
-                    <TouchableOpacity style={styles.okButton} onPress={() => onUpdate(activity)}>
+                    <TouchableOpacity style={styles.okButton} onPress={() => handleSubmitActivity(activity)}>
                     <Text style={{color: '#fff', fontWeight: 'bold'}}>OK</Text>
                     </TouchableOpacity>
                 </View>
@@ -113,7 +133,7 @@ const styles = StyleSheet.create({
         maxHeight: '30%',
     },
     textInput: {
-        marginTop: 15,
+        marginTop: 5,
         padding: 5,
         borderRadius: 10,
 
