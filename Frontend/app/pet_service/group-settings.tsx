@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
-import { StyleSheet, View, Text, ScrollView, Pressable, TextInput, Alert, SafeAreaView } from 'react-native';
+import { StyleSheet, View, Text, ScrollView, Pressable, TextInput, Alert, SafeAreaView, Platform } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { PetStyler } from '@/components/pet-styler';
+import { useGroups } from '@/hooks';
+import * as Clipboard from 'expo-clipboard';
 
 type PetStyle = 'dog' | 'cat' | 'dragon' | 'duck';
 
@@ -17,7 +19,45 @@ interface Member {
 export default function GroupSettings() {
   const router = useRouter();
   const params = useLocalSearchParams();
-  const groupId = (params.groupId as string) ?? 'unknown';
+  const {getGroupInviteCode, loading, error} = useGroups();
+  const { groupId } = useLocalSearchParams<{ groupId: string }>();
+
+  const handleShareGroup = async () => {
+    console.log('groupId recibido:', groupId);
+    if (!groupId) {
+      Alert.alert('Error', 'No se pudo obtener el ID del grupo');
+      return;
+    }
+    try {
+      const inviteCode = await getGroupInviteCode(groupId)
+      console.log('inviteCode recibido:', inviteCode);
+      const message = String(inviteCode);
+        try {
+          if (Platform.OS === 'web' && typeof navigator !== 'undefined' && navigator.clipboard?.writeText) {
+            await navigator.clipboard.writeText(String(inviteCode));
+          } else if (Clipboard?.setStringAsync) {
+            await Clipboard.setStringAsync(String(inviteCode));
+          }
+
+          if (Platform.OS === 'web' && typeof window !== 'undefined') {
+            window.alert(`Código copiado: ${inviteCode}`);
+          } else {
+            Alert.alert('Código copiado', `Código: ${inviteCode}`);
+          }
+        } catch (copyErr) {
+          console.warn('Error al copiar al portapapeles', copyErr);
+          // Fallback: mostrar el código en alerta
+          if (Platform.OS === 'web' && typeof window !== 'undefined') {
+            window.alert(String(inviteCode));
+          } else {
+            Alert.alert('Código de invitación', String(inviteCode));
+          }
+        }
+    } catch (err) {
+      console.error('Error al obtener código:', err);
+      Alert.alert('Error', error?.message || 'No se pudo obtener el código de invitación');
+    }
+  };
 
   // Dummy group state
   const [groupName, setGroupName] = useState('Group 1');
@@ -116,7 +156,7 @@ export default function GroupSettings() {
                 <Text style={styles.buttonIcon}>👥</Text>
                 <ThemedText style={styles.buttonText}>Add</ThemedText>
               </Pressable>
-              <Pressable style={[styles.smallButton, { flex: 1, marginLeft: 12 }]} onPress={() => Alert.alert('Share Group')}>
+              <Pressable style={[styles.smallButton, { flex: 1, marginLeft: 12 }]} onPress={handleShareGroup}>
                 <Text style={styles.buttonIcon}>📤</Text>
                 <ThemedText style={styles.buttonText}>Share</ThemedText>
               </Pressable>

@@ -93,6 +93,18 @@ export const useGroups = () => {
     }
   };
 
+
+  const getGroupInviteCode = async (groupId: string): Promise<string> => {
+    setLoading(true);
+    setError(null);
+    try {
+      const response = await axiosInstance.get<GroupResponseDTO>(`/groups/${groupId}`);
+      return response.data.invite_code;
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const joinGroup = async (joinData: JoinGroupDTO): Promise<void> => {
     setLoading(true);
     setError(null);
@@ -126,6 +138,7 @@ export const useGroups = () => {
     // Actions
     createGroup,
     getGroup,
+    getGroupInviteCode,
     updateGroup,
     deleteGroup,
     joinGroup,
