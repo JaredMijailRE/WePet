@@ -54,7 +54,7 @@ export const useActivities = () => {
     setLoading(true);
     setError(null);
     try {
-      const response = await axiosInstance.post<ActivityResponseDTO>(`/groups/${groupId}/activities`, {
+      const response = await axiosInstance.post<ActivityResponseDTO>(`/${groupId}/activities`, {
         ...activityData,
         group_id: groupId,
       });
@@ -79,7 +79,7 @@ export const useActivities = () => {
     setLoading(true);
     setError(null);
     try {
-      const response = await axiosInstance.get<ActivityResponseDTO[]>(`/groups/${groupId}/activities`);
+      const response = await axiosInstance.get<ActivityResponseDTO[]>(`${groupId}/activities`);
       return response.data;
     } finally {
       setLoading(false);

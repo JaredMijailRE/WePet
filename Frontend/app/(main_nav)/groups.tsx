@@ -99,6 +99,7 @@ const GroupsSearchTab = () => {
       try {
         setGroupIDEmpty(false)
         await joinGroup({invite_code: groupID});
+        await loadMyGroups();
 
         setModalVisible(!modalVisible)
         setErrorFetching(false)
