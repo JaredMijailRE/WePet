@@ -11,7 +11,7 @@ class ManageEmotionsUseCase:
 
     def register_mood(self, user_id: uuid.UUID, data: CreateEmotionDTO) -> List[EmotionResponseDTO]:
         responses = []
-        current_time = datetime.now(timezone.utc)
+        # current_time = datetime.now(timezone.utc)
         for group_id in data.group_ids:
             new_report = EmotionalReport(
                 id=uuid.uuid4(),

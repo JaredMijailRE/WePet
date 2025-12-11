@@ -1,5 +1,7 @@
 from abc import ABC, abstractmethod
+from typing import List
 from domain.entities.user import User
+import uuid
 
 class UserRepository(ABC):
 
@@ -17,4 +19,12 @@ class UserRepository(ABC):
 
     @abstractmethod
     def save(self, user: User) -> User:
+        pass
+
+    @abstractmethod
+    def find_by_id(self, user_id: uuid.UUID) -> User | None:
+        pass
+
+    @abstractmethod
+    def find_by_ids(self, user_ids: List[uuid.UUID]) -> List[User]:
         pass

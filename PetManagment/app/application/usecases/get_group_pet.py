@@ -3,14 +3,13 @@ from app.domain.entities.pet import Pet
 from fastapi import HTTPException
 import uuid
 
-class NamePetUseCase:
+class GetGroupPetUseCase:
     def __init__(self, repository: PetRepository):
         self.repository = repository
 
-    def execute(self, group_id: uuid.UUID, name: str) -> Pet:
+    def execute(self, group_id: uuid.UUID) -> Pet:
         pet = self.repository.find_by_group_id(group_id)
         if not pet:
             raise HTTPException(status_code=404, detail="Pet not found for this group")
-        
-        pet.update_name(name)
-        return self.repository.update(pet)
+        return pet
+

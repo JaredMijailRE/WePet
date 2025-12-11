@@ -1,9 +1,14 @@
-import React, { useState } from 'react';
-import { StyleSheet, View, Text, ScrollView, Pressable, TextInput, Alert, SafeAreaView } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { StyleSheet, View, Text, ScrollView, Pressable, TextInput, Alert, SafeAreaView, Platform, Modal } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { PetStyler } from '@/components/pet-styler';
+import { useGroups, useGroupMembers } from '@/hooks';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as Clipboard from 'expo-clipboard';
+import petService from '@/services/pet';
+import userService from '@/services/user';
 
 type PetStyle = 'dog' | 'cat' | 'dragon' | 'duck';
 
@@ -17,20 +22,242 @@ interface Member {
 export default function GroupSettings() {
   const router = useRouter();
   const params = useLocalSearchParams();
-  const groupId = (params.groupId as string) ?? 'unknown';
+  const {getGroupInviteCode, getGroup, updateGroup, loading, error} = useGroups();
+  const { listGroupMembers, getUserById, removeGroupMember } = useGroupMembers();
+  const { groupId } = useLocalSearchParams<{ groupId: string }>();
 
-  // Dummy group state
-  const [groupName, setGroupName] = useState('Group 1');
+  const handleShareGroup = async () => {
+    if (!groupId) {
+      Alert.alert('Error', 'No se pudo obtener el ID del grupo');
+      return;
+    }
+    try {
+      const inviteCode = await getGroupInviteCode(groupId)
+      const message = String(inviteCode);
+        try {
+          if (Platform.OS === 'web' && typeof navigator !== 'undefined' && navigator.clipboard?.writeText) {
+            await navigator.clipboard.writeText(String(inviteCode));
+          } else if (Clipboard?.setStringAsync) {
+            await Clipboard.setStringAsync(String(inviteCode));
+          }
+
+          if (Platform.OS === 'web' && typeof window !== 'undefined') {
+            window.alert(`Código copiado: ${inviteCode}`);
+          } else {
+            Alert.alert('Código copiado', `Código: ${inviteCode}`);
+          }
+        } catch (copyErr) {
+          console.warn('Error al copiar al portapapeles', copyErr);
+          // Fallback: mostrar el código en alerta
+          if (Platform.OS === 'web' && typeof window !== 'undefined') {
+            window.alert(String(inviteCode));
+          } else {
+            Alert.alert('Código de invitación', String(inviteCode));
+          }
+        }
+    } catch (err) {
+      console.error('Error al obtener código:', err);
+      Alert.alert('Error', error?.message || 'No se pudo obtener el código de invitación');
+    }
+  };
+
+  // Load group details when we have a groupId
+  useEffect(() => {
+    const load = async () => {
+      if (!groupId) return;
+      try {
+        const g = await getGroup(groupId);
+        if (g?.name) setGroupName(g.name);
+      } catch (err) {
+        console.error('Error loading group details:', err);
+      }
+    };
+
+    load();
+  }, [groupId]);
+
+  
+
+  // Group state
+  const [groupName, setGroupName] = useState('');
   const [isEditingName, setIsEditingName] = useState(false);
   const [petStyle, setPetStyle] = useState<PetStyle>('dog');
   
-  const [members, setMembers] = useState<Member[]>([
-    { id: '1', name: 'Alex (You)', role: 'Administrator', status: 'Status' },
-    { id: '2', name: 'Raul', role: 'Member', status: 'Status' },
-    { id: '3', name: 'Sam', role: 'Member', status: 'Status' },
-  ]);
+  const [members, setMembers] = useState<Member[]>([]);
+
+  // Pet name editing state
+  const [isEditingPetName, setIsEditingPetName] = useState(false);
+  const [newPetName, setNewPetName] = useState('');
+  const [petId, setPetId] = useState<string | null>(null);
+  const [isSavingPetName, setIsSavingPetName] = useState(false);
+
+  // Load members when we have a groupId
+  useEffect(() => {
+    const loadMembers = async () => {
+      if (!groupId) {
+        return;
+      }
+      try {
+        console.log(`Loading members for group: ${groupId}`);
+        // 1. Obtener lista de miembros del grupo (con IDs) usando useGroupMembers
+        const groupMembers = await listGroupMembers(groupId as string);
+        console.log(`Found ${groupMembers?.length || 0} group members`);
+
+        // 2. Extraer user IDs de los miembros del grupo (deduplicados)
+        const userIdSet = new Set<string>();
+        const memberRoles: { [key: string]: string } = {};
+
+        for (const gm of groupMembers || []) {
+          const userId = (gm as any).user_id;
+          if (userId) {
+            userIdSet.add(userId);
+            memberRoles[userId] = (gm as any).role;
+          }
+        }
+
+        const userIds = Array.from(userIdSet);
+
+        // 3. Si hay user IDs, obtener datos de usuarios usando el endpoint batch
+        if (userIds.length > 0) {
+          try {
+            console.log(`Fetching ${userIds.length} users using batch endpoint:`, userIds);
+            const users = await userService.getUsersByIds(userIds);
+            console.log(`Successfully fetched ${users.length} user details`);
+
+            // 4. Crear objetos Member con datos reales de usuarios
+            const memberDetails: Member[] = users.map(user => ({
+              id: user.id,
+              name: user.username, // Usar username real en lugar de placeholder
+              role: memberRoles[user.id] === 'admin' ? 'Administrator' : 'Member',
+              status: 'Member',
+            }));
+
+            setMembers(memberDetails);
+          } catch (userErr) {
+            console.warn('Error fetching user data with batch endpoint, falling back to placeholders. User IDs attempted:', userIds, 'Error:', userErr);
+
+            // Fallback: crear miembros con placeholders si falla la API de usuarios
+            const memberDetails: Member[] = userIds.map(userId => ({
+              id: userId,
+              name: `User ${userId.slice(0, 6)}`,
+              role: memberRoles[userId] === 'admin' ? 'Administrator' : 'Member',
+              status: 'Member',
+            }));
+
+            console.log(`Created ${memberDetails.length} members with placeholder names`);
+            setMembers(memberDetails);
+          }
+        } else {
+          setMembers([]);
+        }
+      } catch (err) {
+        console.error('Error loading group members:', err);
+        setMembers([]);
+      }
+    };
+
+    loadMembers();
+  }, [groupId]);
+
+  const handleSaveGroup = async () => {
+    if (!groupId) {
+      Alert.alert('Error', 'No se pudo obtener el ID del grupo');
+      return;
+    }
+
+    try {
+      await updateGroup(groupId, { name: groupName });
+      Alert.alert('Guardado', 'Nombre del grupo actualizado');
+    } catch (err) {
+      console.error('Error updating group name:', err);
+      Alert.alert('Error', error?.message || (err as any)?.message || 'No se pudo actualizar el nombre del grupo');
+    }
+  };
+
+  const getUserIdFromToken = (token: string | null): string | null => {
+    if (!token) return null;
+    try {
+      const parts = token.split('.');
+      if (parts.length < 2) return null;
+      const payload = parts[1];
+      // base64url -> base64
+      const b64 = payload.replace(/-/g, '+').replace(/_/g, '/');
+      let decoded = '';
+      // Try atob (web), Buffer (node/react-native), or global atob
+      if (typeof atob !== 'undefined') {
+        decoded = atob(b64);
+      } else if (typeof (globalThis as any)?.Buffer !== 'undefined') {
+        decoded = (globalThis as any).Buffer.from(b64, 'base64').toString('utf8');
+      } else if (typeof window !== 'undefined' && (window as any).atob) {
+        decoded = (window as any).atob(b64);
+      } else {
+        // Fallback: try a manual base64 decode (rare)
+        try {
+          decoded = decodeURIComponent(
+            Array.prototype.map
+              .call(atob(b64), function (c: string) {
+                return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+              })
+              .join('')
+          );
+        } catch (e) {
+          console.warn('No base64 decoder available', e);
+          return null;
+        }
+      }
+
+      // If decoded is percent-encoded, try to JSON parse directly
+      let json = decoded;
+      try {
+        // Some decoders already return utf8, others percent-encoded
+        if (json.startsWith('%')) {
+          json = decodeURIComponent(json);
+        }
+      } catch (e) {
+        // ignore
+      }
+      const data = JSON.parse(json);
+      return data.sub || data.user_id || data.id || null;
+    } catch (e) {
+      console.warn('Failed to parse token for user id', e);
+      return null;
+    }
+  };
 
   const handleExitGroup = () => {
+    if (Platform.OS === 'web' && typeof window !== 'undefined') {
+      const confirm = window.confirm('Are you sure you want to leave this group?');
+      if (!confirm) return;
+      (async () => {
+        console.log('Exit confirmed (web)');
+        if (!groupId) {
+          window.alert('Error: no se pudo obtener el ID del grupo');
+          return;
+        }
+
+        try {
+          const token = await AsyncStorage.getItem('authToken');
+          console.log('authToken (debug):', token);
+          const userId = getUserIdFromToken(token);
+          console.log('Leaving group, resolved userId:', userId);
+          if (!userId) {
+            window.alert('Error: no se pudo determinar el usuario actual');
+            return;
+          }
+
+          await removeGroupMember(groupId as string, userId);
+          setMembers((prev) => prev.filter((m) => m.id !== userId));
+          window.alert('Has salido del grupo');
+          router.push('/(main_nav)/groups');
+        } catch (err) {
+          console.error('Error leaving group:', err);
+          window.alert('Error: ' + ((err as any)?.message || 'No se pudo salir del grupo'));
+        }
+      })();
+      return;
+    }
+
+    // Native flow
     Alert.alert(
       'Exit Group',
       'Are you sure you want to leave this group?',
@@ -39,7 +266,32 @@ export default function GroupSettings() {
         {
           text: 'Exit',
           onPress: () => {
-            router.push('/(main_nav)/groups');
+            (async () => {
+              if (!groupId) {
+                Alert.alert('Error', 'No se pudo obtener el ID del grupo');
+                return;
+              }
+
+              try {
+                const token = await AsyncStorage.getItem('authToken');
+                console.log('authToken (debug):', token);
+                const userId = getUserIdFromToken(token);
+                console.log('Leaving group, resolved userId:', userId);
+                if (!userId) {
+                  Alert.alert('Error', 'No se pudo determinar el usuario actual');
+                  return;
+                }
+
+                await removeGroupMember(groupId as string, userId);
+                setMembers((prev) => prev.filter((m) => m.id !== userId));
+
+                Alert.alert('Salida', 'Has salido del grupo');
+                router.push('/(main_nav)/groups');
+              } catch (err) {
+                console.error('Error leaving group:', err);
+                Alert.alert('Error', (err as any)?.message || 'No se pudo salir del grupo');
+              }
+            })();
           },
           style: 'default',
         },
@@ -68,6 +320,48 @@ export default function GroupSettings() {
     setMembers(members.filter(m => m.id !== memberId));
   };
 
+  const handleChangeName = async () => {
+    if (!groupId) {
+      Alert.alert('Error', 'No se pudo obtener el ID del grupo');
+      return;
+    }
+
+    try {
+      const pet = await petService.getPetByGroup(groupId);
+      setPetId(pet.id || `pet-${groupId}`);
+      setNewPetName(pet.name || '');
+      setIsEditingPetName(true);
+    } catch (err) {
+      console.error('Error loading pet:', err);
+    }
+  };
+
+  const handleSavePetName = async () => {
+
+    if (!petId) {
+      Alert.alert('Error', 'No se pudo obtener el ID de la mascota');
+      return;
+    }
+
+    setIsSavingPetName(true);
+    try {
+      await petService.updatePetName(petId, newPetName.trim());
+      setIsEditingPetName(false);
+      Alert.alert('Éxito', 'Nombre de la mascota actualizado');
+    } catch (err) {
+      console.error('Error updating pet name:', err);
+      Alert.alert('Error', 'No se pudo actualizar el nombre de la mascota');
+    } finally {
+      setIsSavingPetName(false);
+    }
+  };
+
+  const handleCancelPetNameEdit = () => {
+    setIsEditingPetName(false);
+    setNewPetName('');
+    setPetId(null);
+  };
+
   return (
     <ThemedView style={styles.container}>
       <SafeAreaView style={styles.safeContent}>
@@ -89,7 +383,8 @@ export default function GroupSettings() {
                 style={styles.groupNameInput}
                 value={groupName}
                 onChangeText={setGroupName}
-                onBlur={() => setIsEditingName(false)}
+                onBlur={() => { setIsEditingName(false); handleSaveGroup(); }}
+                onSubmitEditing={() => { setIsEditingName(false); handleSaveGroup(); }}
                 autoFocus
               />
             ) : (
@@ -104,19 +399,16 @@ export default function GroupSettings() {
 
           {/* Action Buttons */}
           <View style={styles.actionsSection}>
-            {/* Change Pet Button */}
-            <Pressable style={styles.mainButton} onPress={() => Alert.alert('Change Pet')}>
-              <Text style={styles.buttonIcon}>🐾</Text>
-              <ThemedText style={styles.mainButtonText}>Change Pet</ThemedText>
-            </Pressable>
 
             {/* Add & Share Row */}
             <View style={styles.buttonRow}>
-              <Pressable style={[styles.smallButton, { flex: 1 }]} onPress={() => Alert.alert('Add Member')}>
-                <Text style={styles.buttonIcon}>👥</Text>
-                <ThemedText style={styles.buttonText}>Add</ThemedText>
-              </Pressable>
-              <Pressable style={[styles.smallButton, { flex: 1, marginLeft: 12 }]} onPress={() => Alert.alert('Share Group')}>
+               {/* Change Pet Button */}
+            <Pressable style={[styles.smallButton, { flex: 1, marginLeft: 12 }]} onPress={handleChangeName}>
+              <Text style={styles.buttonIcon}>🐾</Text>
+              <ThemedText style={styles.buttonText}>Change Pet´s name</ThemedText>
+            </Pressable>
+            
+              <Pressable style={[styles.smallButton, { flex: 1, marginLeft: 12 }]} onPress={handleShareGroup}>
                 <Text style={styles.buttonIcon}>📤</Text>
                 <ThemedText style={styles.buttonText}>Share</ThemedText>
               </Pressable>
@@ -175,6 +467,50 @@ export default function GroupSettings() {
           </View>
         </ScrollView>
       </SafeAreaView>
+
+      {/* Edit Pet Name Modal */}
+      <Modal
+        visible={isEditingPetName}
+        transparent
+        animationType="fade"
+        onRequestClose={handleCancelPetNameEdit}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <ThemedText style={styles.modalTitle}>Change Pet Name</ThemedText>
+            
+            <TextInput
+              style={styles.modalInput}
+              placeholder="Enter pet name"
+              placeholderTextColor="#999"
+              value={newPetName}
+              onChangeText={setNewPetName}
+              maxLength={30}
+              editable={!isSavingPetName}
+            />
+            
+            <View style={styles.modalButtonGroup}>
+              <Pressable 
+                onPress={handleCancelPetNameEdit}
+                disabled={isSavingPetName}
+                style={[styles.modalButton, styles.cancelButton]}
+              >
+                <ThemedText style={styles.modalButtonText}>Cancel</ThemedText>
+              </Pressable>
+              
+              <Pressable 
+                onPress={handleSavePetName}
+                disabled={isSavingPetName}
+                style={[styles.modalButton, styles.saveButton]}
+              >
+                <ThemedText style={[styles.modalButtonText, { color: '#fff' }]}>
+                  {isSavingPetName ? 'Saving...' : 'Save'}
+                </ThemedText>
+              </Pressable>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </ThemedView>
   );
 }
@@ -382,5 +718,62 @@ const styles = StyleSheet.create({
   },
   deleteButtonIcon: {
     fontSize: 16,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  modalContent: {
+    backgroundColor: '#fff',
+    borderRadius: 16,
+    padding: 24,
+    width: '100%',
+    maxWidth: 400,
+    shadowColor: '#000',
+    shadowOpacity: 0.3,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 8,
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    marginBottom: 16,
+    color: '#6750a4',
+  },
+  modalInput: {
+    borderWidth: 1,
+    borderColor: '#ddd',
+    borderRadius: 8,
+    padding: 12,
+    marginBottom: 20,
+    fontSize: 16,
+    color: '#333',
+  },
+  modalButtonGroup: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  modalButton: {
+    flex: 1,
+    paddingVertical: 12,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  cancelButton: {
+    backgroundColor: '#f0f0f0',
+    borderWidth: 1,
+    borderColor: '#ddd',
+  },
+  saveButton: {
+    backgroundColor: '#6750a4',
+  },
+  modalButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#333',
   },
 });

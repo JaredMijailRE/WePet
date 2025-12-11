@@ -1,5 +1,4 @@
 import uuid
-import uuid6 
 from app.domain.repositories.group_repository import GroupRepository
 from app.domain.entities.group import Group
 from app.application.dto.group_dto import GroupCreateDTO, GroupResponseDTO
