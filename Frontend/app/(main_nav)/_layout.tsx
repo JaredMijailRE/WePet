@@ -72,6 +72,22 @@ export default function TabLayout() {
                 ),
             }}
             />
+            <Tabs.Screen
+            name="accounts-settings"
+            options={{
+                title: 'Account',
+                // Hide the tab bar on this screen only
+                tabBarStyle: { display: 'none' },
+                tabBarIcon: ({ color, size, focused }) => (
+                <Ionicons
+                    name={focused ? 'person' : 'person-outline'}
+                    size={size}
+                    color={color}
+                />
+                ),
+            }}
+            />
+
         </Tabs>
     )
 }
