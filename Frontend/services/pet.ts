@@ -33,9 +33,17 @@ export async function createPet(groupId: string, name: string, type: string) {
   return res.json();
 }
 
+export async function updatePetName(petId: string, newName: string) {
+  const url = buildUrl(`/pets/${encodeURIComponent(petId)}`);
+  const res = await fetch(url, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: newName }) });
+  if (!res.ok) throw new Error(`Update pet name failed: ${res.status}`);
+  return res.json();
+}
+
 export default {
   getPetByGroup,
   performPetAction,
   updatePetStatus,
   createPet,
+  updatePetName,
 };
