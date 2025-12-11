@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { StyleSheet, View, Text, ScrollView, Pressable, TextInput, Alert, SafeAreaView, Platform } from 'react-native';
+import { StyleSheet, View, Text, ScrollView, Pressable, TextInput, Alert, SafeAreaView, Platform, Modal } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
@@ -7,6 +7,7 @@ import { PetStyler } from '@/components/pet-styler';
 import { useGroups, useGroupMembers } from '@/hooks';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Clipboard from 'expo-clipboard';
+import petService from '@/services/pet';
 
 type PetStyle = 'dog' | 'cat' | 'dragon' | 'duck';
 
@@ -83,6 +84,12 @@ export default function GroupSettings() {
   
   const [members, setMembers] = useState<Member[]>([]);
 
+  // Pet name editing state
+  const [isEditingPetName, setIsEditingPetName] = useState(false);
+  const [newPetName, setNewPetName] = useState('');
+  const [petId, setPetId] = useState<string | null>(null);
+  const [isSavingPetName, setIsSavingPetName] = useState(false);
+
   // Load members when we have a groupId
   useEffect(() => {
     const loadMembers = async () => {
@@ -93,30 +100,18 @@ export default function GroupSettings() {
         // 1. Obtener lista de miembros del grupo (con IDs) usando useGroupMembers
         const groupMembers = await listGroupMembers(groupId as string);
         
-        // 2. Para cada miembro, obtener detalles del usuario por ID
+        // 2. Para cada miembro, crear objeto Member
         const memberDetails: Member[] = [];
         for (const gm of groupMembers || []) {
           try {
             const userId = (gm as any).user_id;
             if (userId) {
-              try {
-                const userDetails = await getUserById(userId);
-                memberDetails.push({
-                  id: userId,
-                  name: userDetails.username,
-                  role: (gm as any).role === 'admin' ? 'Administrator' : 'Member',
-                  status: 'Member',
-                });
-              } catch (userErr) {
-                console.warn(`Error loading details for user ${userId}, using fallback:`, userErr);
-                // Fallback: use userId as name if getUserById fails
-                memberDetails.push({
-                  id: userId,
-                  name: `User ${userId.slice(0, 6)}`,
-                  role: (gm as any).role === 'admin' ? 'Administrator' : 'Member',
-                  status: 'Member',
-                });
-              }
+              memberDetails.push({
+                id: userId,
+                name: `User ${userId.slice(0, 6)}`,
+                role: (gm as any).role === 'admin' ? 'Administrator' : 'Member',
+                status: 'Member',
+              });
             }
           } catch (err) {
             console.warn(`Error processing member ${(gm as any).user_id}:`, err);
@@ -293,6 +288,48 @@ export default function GroupSettings() {
     setMembers(members.filter(m => m.id !== memberId));
   };
 
+  const handleChangeName = async () => {
+    if (!groupId) {
+      Alert.alert('Error', 'No se pudo obtener el ID del grupo');
+      return;
+    }
+
+    try {
+      const pet = await petService.getPetByGroup(groupId);
+      setPetId(pet.id || `pet-${groupId}`);
+      setNewPetName(pet.name || '');
+      setIsEditingPetName(true);
+    } catch (err) {
+      console.error('Error loading pet:', err);
+    }
+  };
+
+  const handleSavePetName = async () => {
+
+    if (!petId) {
+      Alert.alert('Error', 'No se pudo obtener el ID de la mascota');
+      return;
+    }
+
+    setIsSavingPetName(true);
+    try {
+      await petService.updatePetName(petId, newPetName.trim());
+      setIsEditingPetName(false);
+      Alert.alert('Éxito', 'Nombre de la mascota actualizado');
+    } catch (err) {
+      console.error('Error updating pet name:', err);
+      Alert.alert('Error', 'No se pudo actualizar el nombre de la mascota');
+    } finally {
+      setIsSavingPetName(false);
+    }
+  };
+
+  const handleCancelPetNameEdit = () => {
+    setIsEditingPetName(false);
+    setNewPetName('');
+    setPetId(null);
+  };
+
   return (
     <ThemedView style={styles.container}>
       <SafeAreaView style={styles.safeContent}>
@@ -334,9 +371,9 @@ export default function GroupSettings() {
             {/* Add & Share Row */}
             <View style={styles.buttonRow}>
                {/* Change Pet Button */}
-            <Pressable style={[styles.smallButton, { flex: 1, marginLeft: 12 }]} onPress={() => Alert.alert('Change Pet')}>
+            <Pressable style={[styles.smallButton, { flex: 1, marginLeft: 12 }]} onPress={handleChangeName}>
               <Text style={styles.buttonIcon}>🐾</Text>
-              <ThemedText style={styles.buttonText}>Change Pet</ThemedText>
+              <ThemedText style={styles.buttonText}>Change Pet´s name</ThemedText>
             </Pressable>
             
               <Pressable style={[styles.smallButton, { flex: 1, marginLeft: 12 }]} onPress={handleShareGroup}>
@@ -398,6 +435,50 @@ export default function GroupSettings() {
           </View>
         </ScrollView>
       </SafeAreaView>
+
+      {/* Edit Pet Name Modal */}
+      <Modal
+        visible={isEditingPetName}
+        transparent
+        animationType="fade"
+        onRequestClose={handleCancelPetNameEdit}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <ThemedText style={styles.modalTitle}>Change Pet Name</ThemedText>
+            
+            <TextInput
+              style={styles.modalInput}
+              placeholder="Enter pet name"
+              placeholderTextColor="#999"
+              value={newPetName}
+              onChangeText={setNewPetName}
+              maxLength={30}
+              editable={!isSavingPetName}
+            />
+            
+            <View style={styles.modalButtonGroup}>
+              <Pressable 
+                onPress={handleCancelPetNameEdit}
+                disabled={isSavingPetName}
+                style={[styles.modalButton, styles.cancelButton]}
+              >
+                <ThemedText style={styles.modalButtonText}>Cancel</ThemedText>
+              </Pressable>
+              
+              <Pressable 
+                onPress={handleSavePetName}
+                disabled={isSavingPetName}
+                style={[styles.modalButton, styles.saveButton]}
+              >
+                <ThemedText style={[styles.modalButtonText, { color: '#fff' }]}>
+                  {isSavingPetName ? 'Saving...' : 'Save'}
+                </ThemedText>
+              </Pressable>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </ThemedView>
   );
 }
@@ -605,5 +686,62 @@ const styles = StyleSheet.create({
   },
   deleteButtonIcon: {
     fontSize: 16,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  modalContent: {
+    backgroundColor: '#fff',
+    borderRadius: 16,
+    padding: 24,
+    width: '100%',
+    maxWidth: 400,
+    shadowColor: '#000',
+    shadowOpacity: 0.3,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 8,
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    marginBottom: 16,
+    color: '#6750a4',
+  },
+  modalInput: {
+    borderWidth: 1,
+    borderColor: '#ddd',
+    borderRadius: 8,
+    padding: 12,
+    marginBottom: 20,
+    fontSize: 16,
+    color: '#333',
+  },
+  modalButtonGroup: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  modalButton: {
+    flex: 1,
+    paddingVertical: 12,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  cancelButton: {
+    backgroundColor: '#f0f0f0',
+    borderWidth: 1,
+    borderColor: '#ddd',
+  },
+  saveButton: {
+    backgroundColor: '#6750a4',
+  },
+  modalButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#333',
   },
 });
