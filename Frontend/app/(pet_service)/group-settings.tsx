@@ -23,7 +23,7 @@ interface Member {
 export default function GroupSettings() {
   const router = useRouter();
   const params = useLocalSearchParams();
-  const {getGroupInviteCode, getGroup, updateGroup, loading, error} = useGroups();
+  const {getGroupInviteCode, getGroup, updateGroup, deleteGroup, loading, error} = useGroups();
   const { listGroupMembers, getUserById, removeGroupMember } = useGroupMembers();
   const { groupId } = useLocalSearchParams<{ groupId: string }>();
 
@@ -301,6 +301,29 @@ export default function GroupSettings() {
   };
 
   const handleDeleteGroup = () => {
+    if (Platform.OS === 'web' && typeof window !== 'undefined') {
+      const confirm = window.confirm('Are you sure you want to delete this group? This action cannot be undone.');
+      if (!confirm) return;
+      (async () => {
+        console.log('Delete confirmed (web)');
+        if (!groupId) {
+          window.alert('Error: no se pudo obtener el ID del grupo');
+          return;
+        }
+
+        try {
+          await deleteGroup(groupId as string);
+          window.alert('Grupo eliminado exitosamente');
+          router.push('/(main_nav)/groups');
+        } catch (err) {
+          console.error('Error deleting group:', err);
+          window.alert('Error: ' + ((err as any)?.message || 'No se pudo eliminar el grupo'));
+        }
+      })();
+      return;
+    }
+
+    // Native flow
     Alert.alert(
       'Delete Group',
       'Are you sure you want to delete this group? This action cannot be undone.',
@@ -309,7 +332,21 @@ export default function GroupSettings() {
         {
           text: 'Delete',
           onPress: () => {
-            router.push('/(main_nav)/groups');
+            (async () => {
+              if (!groupId) {
+                Alert.alert('Error', 'No se pudo obtener el ID del grupo');
+                return;
+              }
+
+              try {
+                await deleteGroup(groupId as string);
+                Alert.alert('Éxito', 'Grupo eliminado exitosamente');
+                router.push('/(main_nav)/groups');
+              } catch (err) {
+                console.error('Error deleting group:', err);
+                Alert.alert('Error', (err as any)?.message || 'No se pudo eliminar el grupo');
+              }
+            })();
           },
           style: 'destructive',
         },
