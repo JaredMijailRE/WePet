@@ -44,8 +44,9 @@ export async function getUserById(userId: string): Promise<UserDTO> {
 }
 
 export async function getUsersByIds(userIds: string[]): Promise<UserDTO[]> {
-  const idsParam = userIds.join(',');
-  const response = await axiosInstance.get<UserDTO[]>(`/users?ids=${encodeURIComponent(idsParam)}`);
+  const params = new URLSearchParams();
+  userIds.forEach(id => params.append('ids', id));
+  const response = await axiosInstance.get<UserDTO[]>(`/users?${params.toString()}`);
   return response.data;
 }
 

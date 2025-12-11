@@ -98,25 +98,31 @@ export default function GroupSettings() {
         return;
       }
       try {
+        console.log(`Loading members for group: ${groupId}`);
         // 1. Obtener lista de miembros del grupo (con IDs) usando useGroupMembers
         const groupMembers = await listGroupMembers(groupId as string);
+        console.log(`Found ${groupMembers?.length || 0} group members`);
 
-        // 2. Extraer user IDs de los miembros del grupo
-        const userIds: string[] = [];
+        // 2. Extraer user IDs de los miembros del grupo (deduplicados)
+        const userIdSet = new Set<string>();
         const memberRoles: { [key: string]: string } = {};
 
         for (const gm of groupMembers || []) {
           const userId = (gm as any).user_id;
           if (userId) {
-            userIds.push(userId);
+            userIdSet.add(userId);
             memberRoles[userId] = (gm as any).role;
           }
         }
 
-        // 3. Si hay user IDs, obtener datos de usuarios
+        const userIds = Array.from(userIdSet);
+
+        // 3. Si hay user IDs, obtener datos de usuarios usando el endpoint batch
         if (userIds.length > 0) {
           try {
+            console.log(`Fetching ${userIds.length} users using batch endpoint:`, userIds);
             const users = await userService.getUsersByIds(userIds);
+            console.log(`Successfully fetched ${users.length} user details`);
 
             // 4. Crear objetos Member con datos reales de usuarios
             const memberDetails: Member[] = users.map(user => ({
@@ -128,7 +134,7 @@ export default function GroupSettings() {
 
             setMembers(memberDetails);
           } catch (userErr) {
-            console.warn('Error fetching user data, falling back to placeholders:', userErr);
+            console.warn('Error fetching user data with batch endpoint, falling back to placeholders. User IDs attempted:', userIds, 'Error:', userErr);
 
             // Fallback: crear miembros con placeholders si falla la API de usuarios
             const memberDetails: Member[] = userIds.map(userId => ({
@@ -138,6 +144,7 @@ export default function GroupSettings() {
               status: 'Member',
             }));
 
+            console.log(`Created ${memberDetails.length} members with placeholder names`);
             setMembers(memberDetails);
           }
         } else {
@@ -150,7 +157,7 @@ export default function GroupSettings() {
     };
 
     loadMembers();
-  }, [groupId, listGroupMembers]);
+  }, [groupId]);
 
   const handleSaveGroup = async () => {
     if (!groupId) {
