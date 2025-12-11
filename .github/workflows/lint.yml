@@ -48,5 +48,8 @@ jobs:
       - name: Install uv
         uses: astral-sh/setup-uv@v3
 
-      - name: Run tests with uv
+      - name: Install project dependencies
+        run: uv sync
+
+      - name: Run pytest via uv
         run: uv run pytest ./${{ matrix.project }}
