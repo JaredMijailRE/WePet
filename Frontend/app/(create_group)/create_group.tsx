@@ -29,12 +29,13 @@ export default function CreateGroupPage() {
 
         try {
           const newPet = await createPet(newGroup.id, petName, selectedStyle);
+          Alert.alert('Éxito', `Grupo "${name}" creado con mascota ${selectedStyle}`);
+          console.log('Éxito en crear la mascota');
+          router.push("/(main_nav)/groups");
         } catch (err) {
           Alert.alert('Advertencia', 'El grupo se creó pero la mascota no pudo ser creada.');
+          router.push("/(main_nav)/groups");
         }
-        Alert.alert('Éxito', `Grupo "${name}" creado con mascota ${selectedStyle}`);
-        console.log('Éxito en crear la mascota');
-        router.push("/(main_nav)/groups");
     };
 
     return (

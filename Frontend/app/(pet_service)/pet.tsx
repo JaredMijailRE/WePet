@@ -53,7 +53,7 @@ export default function PetScreen() {
 
           {/* Level Circle */}
           <View style={styles.levelCircle}>
-            <ThemedText style={styles.levelNumber}>{pet.level}</ThemedText>
+            <ThemedText style={styles.levelNumber}>{pet?.level ?? '...'}</ThemedText>
             <ThemedText style={styles.levelText}>LVL</ThemedText>
           </View>
         </View>
@@ -76,7 +76,7 @@ export default function PetScreen() {
 
         {/* Main Pet Area - Center */}
         <View style={styles.petCenterContainer}>
-          {pet ? <PetStyler style={(pet.style ?? 'dog') as PetStyle} size={180} /> : <PetStyler style={'dog'} size={180} />}
+          <PetStyler style={(pet?.style ?? 'dog') as PetStyle} size={180} />
         </View>
 
         {/* Right Progress Indicators */}

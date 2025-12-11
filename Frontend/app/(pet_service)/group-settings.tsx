@@ -328,11 +328,16 @@ export default function GroupSettings() {
 
     try {
       const pet = await petService.getPetByGroup(groupId);
-      setPetId(pet.id || `pet-${groupId}`);
-      setNewPetName(pet.name || '');
-      setIsEditingPetName(true);
+      if (pet && pet.id) {
+        setPetId(pet.id);
+        setNewPetName(pet.name || '');
+        setIsEditingPetName(true);
+      } else {
+        Alert.alert('Mascota no encontrada', 'No hay una mascota en este grupo para cambiarle el nombre.');
+      }
     } catch (err) {
       console.error('Error loading pet:', err);
+      Alert.alert('Error', 'No se pudo cargar la información de la mascota.');
     }
   };
 
