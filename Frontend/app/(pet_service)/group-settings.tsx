@@ -8,6 +8,7 @@ import { useGroups, useGroupMembers } from '@/hooks';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Clipboard from 'expo-clipboard';
 import petService from '@/services/pet';
+import { getPetByGroup, updatePetName } from '@/services/pet';
 import userService from '@/services/user';
 
 type PetStyle = 'dog' | 'cat' | 'dragon' | 'duck';
@@ -87,7 +88,7 @@ export default function GroupSettings() {
 
   // Pet name editing state
   const [isEditingPetName, setIsEditingPetName] = useState(false);
-  const [newPetName, setNewPetName] = useState('');
+  const [newName, setNewPetName] = useState('');
   const [petId, setPetId] = useState<string | null>(null);
   const [isSavingPetName, setIsSavingPetName] = useState(false);
 
@@ -327,12 +328,16 @@ export default function GroupSettings() {
     }
 
     try {
-      const pet = await petService.getPetByGroup(groupId);
-      if (pet && pet.id) {
-        setPetId(pet.id);
+      const pet = await getPetByGroup(groupId);
+      console.log('Pet data received:', pet);
+      
+      if (pet && (pet.id || pet.pet_id)) {
+        const petId = pet.id || pet.pet_id;
+        setPetId(petId);
         setNewPetName(pet.name || '');
         setIsEditingPetName(true);
       } else {
+        console.error('Invalid pet response:', pet);
         Alert.alert('Mascota no encontrada', 'No hay una mascota en este grupo para cambiarle el nombre.');
       }
     } catch (err) {
@@ -350,7 +355,7 @@ export default function GroupSettings() {
 
     setIsSavingPetName(true);
     try {
-      await petService.updatePetName(petId, newPetName.trim());
+      await updatePetName(petId, newName);
       setIsEditingPetName(false);
       Alert.alert('Éxito', 'Nombre de la mascota actualizado');
     } catch (err) {
@@ -488,7 +493,7 @@ export default function GroupSettings() {
               style={styles.modalInput}
               placeholder="Enter pet name"
               placeholderTextColor="#999"
-              value={newPetName}
+              value={newName}
               onChangeText={setNewPetName}
               maxLength={30}
               editable={!isSavingPetName}
