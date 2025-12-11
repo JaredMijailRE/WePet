@@ -30,6 +30,7 @@ export default function CreateGroupPage() {
         try {
           const newPet = await createPet(newGroup.id, petName, selectedStyle);
         } catch (err) {
+          console.error('Error creating pet:', err);
           Alert.alert('Advertencia', 'El grupo se creó pero la mascota no pudo ser creada.');
         }
         Alert.alert('Éxito', `Grupo "${name}" creado con mascota ${selectedStyle}`);

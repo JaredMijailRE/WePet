@@ -7,6 +7,7 @@ class PetType(str, Enum):
     DOG = "dog"
     CAT = "cat"
     DRAGON = "dragon"
+    DUCK = "duck"
 
 @dataclass
 class Pet:
