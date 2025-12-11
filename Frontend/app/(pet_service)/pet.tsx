@@ -1,12 +1,16 @@
 import React, { useEffect, useState } from 'react';
 import { StyleSheet, View, Pressable, Image, Text, SafeAreaView } from 'react-native';
-import { useRouter, useLocalSearchParams } from 'expo-router';
+import { useRouter, useLocalSearchParams, Stack } from 'expo-router';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { PetStyler } from '@/components/pet-styler';
 import petService from '@/services/pet';
 
 type PetStyle = 'dog' | 'cat' | 'dragon' | 'duck';
+
+export const unstable_settings = {
+  headerShown: false,
+};
 
 export default function PetScreen() {
   const router = useRouter();
