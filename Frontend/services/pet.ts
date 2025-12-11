@@ -27,7 +27,7 @@ export async function updatePetStatus(petId: string, body: Record<string, any>) 
 }
 
 export async function createPet(groupId: string, name: string, type: string) {
-  const url = buildUrl(`/pet/`);
+  const url = buildUrl(`/pet/pet/`);
   console.log('Creating pet with URL:', url, 'and data:', { group_id: groupId, name, type });
   const res = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ group_id: groupId, name, type }) });
   if (!res.ok) {
