@@ -330,18 +330,15 @@ export default function GroupSettings() {
 
           {/* Action Buttons */}
           <View style={styles.actionsSection}>
-            {/* Change Pet Button */}
-            <Pressable style={styles.mainButton} onPress={() => Alert.alert('Change Pet')}>
-              <Text style={styles.buttonIcon}>🐾</Text>
-              <ThemedText style={styles.mainButtonText}>Change Pet</ThemedText>
-            </Pressable>
 
             {/* Add & Share Row */}
             <View style={styles.buttonRow}>
-              <Pressable style={[styles.smallButton, { flex: 1 }]} onPress={() => Alert.alert('Add Member')}>
-                <Text style={styles.buttonIcon}>👥</Text>
-                <ThemedText style={styles.buttonText}>Add</ThemedText>
-              </Pressable>
+               {/* Change Pet Button */}
+            <Pressable style={[styles.smallButton, { flex: 1, marginLeft: 12 }]} onPress={() => Alert.alert('Change Pet')}>
+              <Text style={styles.buttonIcon}>🐾</Text>
+              <ThemedText style={styles.buttonText}>Change Pet</ThemedText>
+            </Pressable>
+            
               <Pressable style={[styles.smallButton, { flex: 1, marginLeft: 12 }]} onPress={handleShareGroup}>
                 <Text style={styles.buttonIcon}>📤</Text>
                 <ThemedText style={styles.buttonText}>Share</ThemedText>
