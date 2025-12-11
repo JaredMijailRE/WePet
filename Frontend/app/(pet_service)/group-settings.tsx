@@ -528,7 +528,7 @@ export default function GroupSettings() {
                {/* Change Pet Button */}
             <Pressable style={[styles.smallButton, { flex: 1, marginLeft: 12 }]} onPress={handleChangeName}>
               <Text style={styles.buttonIcon}>🐾</Text>
-              <ThemedText style={styles.buttonText}>Change Pet´s name</ThemedText>
+              <ThemedText style={styles.buttonText}> Pet´s name</ThemedText>
             </Pressable>
             
               <Pressable style={[styles.smallButton, { flex: 1, marginLeft: 12 }]} onPress={handleShareGroup}>
@@ -600,7 +600,7 @@ export default function GroupSettings() {
       >
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
-            <ThemedText style={styles.modalTitle}>Change Pet Name</ThemedText>
+            <ThemedText style={styles.modalTitle}>Visualize Pet Name</ThemedText>
             
             <TextInput
               style={styles.modalInput}
@@ -618,18 +618,10 @@ export default function GroupSettings() {
                 disabled={isSavingPetName}
                 style={[styles.modalButton, styles.cancelButton]}
               >
-                <ThemedText style={styles.modalButtonText}>Cancel</ThemedText>
+                <ThemedText style={styles.modalButtonText}>Ok</ThemedText>
               </Pressable>
               
-              <Pressable 
-                onPress={handleSavePetName}
-                disabled={isSavingPetName}
-                style={[styles.modalButton, styles.saveButton]}
-              >
-                <ThemedText style={[styles.modalButtonText, { color: '#fff' }]}>
-                  {isSavingPetName ? 'Saving...' : 'Save'}
-                </ThemedText>
-              </Pressable>
+              
             </View>
           </View>
         </View>
