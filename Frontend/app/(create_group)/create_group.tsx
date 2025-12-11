@@ -4,6 +4,7 @@ import { View, TextInput, FlatList, Text, StyleSheet, Alert, TouchableOpacity, P
 import { PetStyler } from '../../components/pet-styler';
 import { router } from "expo-router";
 import { useGroups } from '@/hooks';
+import { createPet } from '@/services/pet';
 
 type PetStyle = 'dog' | 'cat' | 'dragon' | 'duck';
 
@@ -20,11 +21,19 @@ export default function CreateGroupPage() {
             Alert.alert('Error', 'Por favor ingresa el nombre del grupo y de la mascota');
             return;
         }
-        const newGroup = await createGroup({
-          name,
-        });
-        
+        const newGroup = await createGroup({ name });
+        if (!newGroup || !newGroup.id) {
+          Alert.alert('Error', 'No se pudo crear el grupo');
+          return;
+        }
+
+        try {
+          const newPet = await createPet(newGroup.id, petName, selectedStyle);
+        } catch (err) {
+          Alert.alert('Advertencia', 'El grupo se creó pero la mascota no pudo ser creada.');
+        }
         Alert.alert('Éxito', `Grupo "${name}" creado con mascota ${selectedStyle}`);
+        console.log('Éxito en crear la mascota');
         router.push("/(main_nav)/groups");
     };
 
