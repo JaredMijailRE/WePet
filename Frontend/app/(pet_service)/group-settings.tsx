@@ -355,7 +355,60 @@ export default function GroupSettings() {
   };
 
   const handleRemoveMember = (memberId: string) => {
-    setMembers(members.filter(m => m.id !== memberId));
+    const member = members.find(m => m.id === memberId);
+    const memberName = member?.name || 'this member';
+
+    if (Platform.OS === 'web' && typeof window !== 'undefined') {
+      const confirm = window.confirm(`Are you sure you want to remove ${memberName} from this group?`);
+      if (!confirm) return;
+      (async () => {
+        console.log('Remove member confirmed (web)');
+        if (!groupId) {
+          window.alert('Error: no se pudo obtener el ID del grupo');
+          return;
+        }
+
+        try {
+          await removeGroupMember(groupId as string, memberId);
+          setMembers((prev) => prev.filter((m) => m.id !== memberId));
+          window.alert(`${memberName} has been removed from the group`);
+        } catch (err) {
+          console.error('Error removing member:', err);
+          window.alert('Error: ' + ((err as any)?.message || 'No se pudo eliminar el miembro del grupo'));
+        }
+      })();
+      return;
+    }
+
+    // Native flow
+    Alert.alert(
+      'Remove Member',
+      `Are you sure you want to remove ${memberName} from this group?`,
+      [
+        { text: 'Cancel', onPress: () => {}, style: 'cancel' },
+        {
+          text: 'Remove',
+          onPress: () => {
+            (async () => {
+              if (!groupId) {
+                Alert.alert('Error', 'No se pudo obtener el ID del grupo');
+                return;
+              }
+
+              try {
+                await removeGroupMember(groupId as string, memberId);
+                setMembers((prev) => prev.filter((m) => m.id !== memberId));
+                Alert.alert('Éxito', `${memberName} ha sido eliminado del grupo`);
+              } catch (err) {
+                console.error('Error removing member:', err);
+                Alert.alert('Error', (err as any)?.message || 'No se pudo eliminar el miembro del grupo');
+              }
+            })();
+          },
+          style: 'destructive',
+        },
+      ]
+    );
   };
 
   const handleChangeName = async () => {
