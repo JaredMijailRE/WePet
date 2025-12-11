@@ -1,5 +1,4 @@
 from fastapi import HTTPException
-from typing import List
 from app.domain.repositories.user_repository import UserRepository
 from app.application.dto.user_dto import UserDTO
 import uuid

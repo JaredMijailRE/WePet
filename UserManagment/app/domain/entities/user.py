@@ -1,6 +1,4 @@
 
-from datetime import datetime
-from typing import Optional
 
 class User:
     def __init__(self, id, username, email, password_hash, birth_date,
