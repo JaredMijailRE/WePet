@@ -6,7 +6,7 @@ function buildUrl(path: string) {
 }
 
 export async function getPetByGroup(groupId: string) {
-  const url = buildUrl(`/pet/pet/${encodeURIComponent(groupId)}`);
+  const url = buildUrl(`/pet/group/${encodeURIComponent(groupId)}`);
   const res = await fetch(url, { method: 'GET' });
   if (!res.ok) throw new Error(`Failed to fetch pet: ${res.status}`);
   return res.json();
