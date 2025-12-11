@@ -8,6 +8,7 @@ import { useGroups, useGroupMembers } from '@/hooks';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Clipboard from 'expo-clipboard';
 import petService from '@/services/pet';
+import userService from '@/services/user';
 
 type PetStyle = 'dog' | 'cat' | 'dragon' | 'duck';
 
@@ -99,28 +100,52 @@ export default function GroupSettings() {
       try {
         // 1. Obtener lista de miembros del grupo (con IDs) usando useGroupMembers
         const groupMembers = await listGroupMembers(groupId as string);
-        
-        // 2. Para cada miembro, crear objeto Member
-        const memberDetails: Member[] = [];
+
+        // 2. Extraer user IDs de los miembros del grupo
+        const userIds: string[] = [];
+        const memberRoles: { [key: string]: string } = {};
+
         for (const gm of groupMembers || []) {
-          try {
-            const userId = (gm as any).user_id;
-            if (userId) {
-              memberDetails.push({
-                id: userId,
-                name: `User ${userId.slice(0, 6)}`,
-                role: (gm as any).role === 'admin' ? 'Administrator' : 'Member',
-                status: 'Member',
-              });
-            }
-          } catch (err) {
-            console.warn(`Error processing member ${(gm as any).user_id}:`, err);
+          const userId = (gm as any).user_id;
+          if (userId) {
+            userIds.push(userId);
+            memberRoles[userId] = (gm as any).role;
           }
         }
-        
-        setMembers(memberDetails);
+
+        // 3. Si hay user IDs, obtener datos de usuarios
+        if (userIds.length > 0) {
+          try {
+            const users = await userService.getUsersByIds(userIds);
+
+            // 4. Crear objetos Member con datos reales de usuarios
+            const memberDetails: Member[] = users.map(user => ({
+              id: user.id,
+              name: user.username, // Usar username real en lugar de placeholder
+              role: memberRoles[user.id] === 'admin' ? 'Administrator' : 'Member',
+              status: 'Member',
+            }));
+
+            setMembers(memberDetails);
+          } catch (userErr) {
+            console.warn('Error fetching user data, falling back to placeholders:', userErr);
+
+            // Fallback: crear miembros con placeholders si falla la API de usuarios
+            const memberDetails: Member[] = userIds.map(userId => ({
+              id: userId,
+              name: `User ${userId.slice(0, 6)}`,
+              role: memberRoles[userId] === 'admin' ? 'Administrator' : 'Member',
+              status: 'Member',
+            }));
+
+            setMembers(memberDetails);
+          }
+        } else {
+          setMembers([]);
+        }
       } catch (err) {
         console.error('Error loading group members:', err);
+        setMembers([]);
       }
     };
 
