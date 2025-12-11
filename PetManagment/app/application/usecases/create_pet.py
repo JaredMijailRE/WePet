@@ -35,5 +35,9 @@ class CreatePetUseCase:
             name=new_pet.name,
             type=new_pet.type,
             health_level=new_pet.health_level, 
-            happiness_level=new_pet.happiness_level
+            happiness_level=new_pet.happiness_level,
+            hunger_level=new_pet.hunger_level,
+            hygiene_level=new_pet.hygiene_level,
+            level=new_pet.level,
+            xp=new_pet.xp
         )

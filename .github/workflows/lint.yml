@@ -33,3 +33,20 @@ jobs:
 
       - name: Run Ruff Lint
         run: ruff check ./${{ matrix.project }}
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        project:
+          - PetManagment/app
+    name: Test ${{ matrix.project }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
+
+      - name: Run tests with uv
+        run: uv run pytest ./${{ matrix.project }}

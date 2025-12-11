@@ -1,9 +1,9 @@
 import enum
 import uuid
 from datetime import datetime, timezone
-from sqlalchemy import Column, Integer, String, TIMESTAMP
+from sqlalchemy import Column, Integer, String, TIMESTAMP, Uuid
 from sqlalchemy import Enum
-from sqlalchemy.dialects.postgresql import UUID
+# from sqlalchemy.dialects.postgresql import UUID
 from .database import Base
 
 class PetType(str, enum.Enum):
@@ -17,8 +17,8 @@ class PetType(str, enum.Enum):
 class Pet(Base):
     __tablename__ = "pets"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, unique=True, nullable=False)
-    group_id = Column(UUID(as_uuid=True), nullable=False)
+    id = Column(Uuid(as_uuid=True), primary_key=True, default=uuid.uuid4, unique=True, nullable=False)
+    group_id = Column(Uuid(as_uuid=True), nullable=False)
     name = Column(String(50), nullable=False)
     type = Column(Enum(PetType), nullable=False)
     hunger_level = Column(Integer, nullable=False, default=100)
