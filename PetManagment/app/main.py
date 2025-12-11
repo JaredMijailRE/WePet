@@ -12,7 +12,7 @@ app = FastAPI(root_path="/pet")
 # CORS middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # En producción, especifica los orígenes permitidos
+    allow_origins=["http://localhost:8081", "*"],  # En producción, especifica los orígenes permitidos
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -20,4 +20,4 @@ app.add_middleware(
 
 app.add_middleware(TrustedHostMiddleware, allowed_hosts=["*"])
 
-app.include_router(router, prefix="/pet", tags=["Pets"])
+app.include_router(router, tags=["Pets"])

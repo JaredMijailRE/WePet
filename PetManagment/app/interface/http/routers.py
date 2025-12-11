@@ -24,7 +24,7 @@ def create_pet(pet_data: PetCreateDTO, db: Session = Depends(get_db)):
     return use_case.execute(pet_data)
 
 @router.get(
-    "/{group_id}", 
+    "/group/{group_id}", 
     response_model=PetResponseDTO,
     summary="Get group pet",
     description="Obtains data from the pet belonging to the specified group."

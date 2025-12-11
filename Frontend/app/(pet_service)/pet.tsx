@@ -25,8 +25,7 @@ export default function PetScreen() {
         const data = await petService.getPetByGroup(groupId);
         if (mounted) setPet(data);
       } catch (e) {
-        // fallback to dummy if backend not available
-        if (mounted) setPet({ id: 'local-'+groupId, name: `Pet of ${groupId}`, level: 5, life: 78, food: 52, clean: 34, style: 'dog' });
+        console.error("Failed to fetch pet:", e);
       } finally {
         if (mounted) setLoading(false);
       }
@@ -76,7 +75,7 @@ export default function PetScreen() {
 
         {/* Main Pet Area - Center */}
         <View style={styles.petCenterContainer}>
-          <PetStyler style={(pet?.style ?? 'dog') as PetStyle} size={180} />
+          <PetStyler style={(pet?.type ?? 'dog') as PetStyle} size={180} />
         </View>
 
         {/* Right Progress Indicators */}
