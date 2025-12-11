@@ -31,17 +31,11 @@ def seed_emotions():
 seed_emotions()
 app = FastAPI(root_path="/sharing")
 
-
-origins = [
-    "http://localhost:8081",  # Expo web
-    "http://localhost:19006", # Expo web típica
-    "http://localhost:19000", # otra variante
-    "http://localhost",       # por si acaso
-]
+# CORS middleware MUST be added first (will be evaluated last in the chain)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],  
-    allow_credentials=False,
+    allow_credentials=True,
     allow_methods=["*"],  # Permitir GET, POST, PUT, DELETE
     allow_headers=["*"],  # Permitir Authorization, Content-Type
 )
@@ -49,6 +43,7 @@ app.add_middleware(
 app.add_middleware(
     TrustedHostMiddleware, allowed_hosts=["*"]
 )
+
 app.include_router(router, tags=["Emotional Report"])
 
 

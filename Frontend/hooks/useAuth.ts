@@ -9,7 +9,9 @@ import {
   ApiError
 } from './types';
 
-const API_BASE_URL = 'http://localhost/user'; // Adjust this to your backend URL
+// API URL - use Traefik gateway for proper routing
+// Can be overridden via environment variable EXPO_PUBLIC_USER_API_URL
+const API_BASE_URL = process.env.EXPO_PUBLIC_USER_API_URL || 'http://localhost/user';
 
 export const useAuth = () => {
   const [loading, setLoading] = useState(false);
@@ -27,7 +29,7 @@ export const useAuth = () => {
     (response) => response,
     (error) => {
       const apiError: ApiError = {
-        message: error.response?.data?.message || error.message || 'An error occurred',
+        message: error.response?.data?.detail || error.response?.data?.message || error.message || 'An error occurred',
         status: error.response?.status || 500,
         details: error.response?.data,
       };

@@ -51,6 +51,8 @@ services:
     build:
       context: ./UserManagment
       dockerfile: Dockerfile
+    ports:
+      - "3001:80"  # Para desarrollo directo sin Traefik
     environment:
       - DATABASE_URL=postgresql+psycopg2://admin:admin@user-db:5432/userdb
     restart: unless-stopped

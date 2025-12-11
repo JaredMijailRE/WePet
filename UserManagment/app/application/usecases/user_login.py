@@ -10,6 +10,8 @@ class LoginUser:
 
     def execute(self, username: str, password: str):
         user = self.user_repository.find_by_username(username)
+        if not user:
+            user = self.user_repository.find_by_email(username)
 
         if not user:
             raise HTTPException(status_code=401, detail="Usuario o contraseña incorrectos")

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { StyleSheet, TextInput, View, Pressable, Image } from 'react-native';
+import { StyleSheet, TextInput, View, Pressable, Image, Alert, ActivityIndicator } from 'react-native';
 import { Link, useRouter } from 'expo-router';
 
 import ParallaxScrollView from '@/components/parallax-scroll-view';
@@ -11,9 +11,58 @@ import { useAuth } from '@/hooks';
 export default function SignInScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
 
-  const { login, loading, error } = useAuth();
+  const { login, loading, error, clearError } = useAuth();
+
+  const validateForm = (): boolean => {
+    const emailTrimmed = email.trim();
+    const passwordTrimmed = password.trim();
+
+    if (!emailTrimmed && !passwordTrimmed) {
+      Alert.alert('Campos vacíos', 'Por favor ingresa tu usuario y contraseña');
+      return false;
+    }
+
+    if (!emailTrimmed) {
+      Alert.alert('Usuario requerido', 'Por favor ingresa tu usuario o email');
+      return false;
+    }
+
+    if (!passwordTrimmed) {
+      Alert.alert('Contraseña requerida', 'Por favor ingresa tu contraseña');
+      return false;
+    }
+
+    return true;
+  };
+
+  const handleLogin = async () => {
+    if (!validateForm()) return;
+
+    setIsLoading(true);
+    clearError();
+
+    try {
+      const result = await login({
+        username: email.trim(),
+        password: password.trim()
+      });
+
+      // Token automatically stored, user is now logged in
+      console.log('Login successful:', result);
+      router.replace('/(main_nav)/groups');
+    } catch (err: any) {
+      console.error('Login failed:', err);
+      
+      // Mostrar error específico del backend o genérico
+      const errorMessage = err?.message || 'Error al iniciar sesión. Verifica tus credenciales';
+      Alert.alert('Error de autenticación', errorMessage);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   return (
     <ParallaxScrollView
@@ -38,7 +87,7 @@ export default function SignInScreen() {
         <TextInput
           value={email}
           onChangeText={setEmail}
-          placeholder="example@gmail.com"
+          placeholder="Usuario o email"
           keyboardType="email-address"
           autoCapitalize="none"
           style={styles.input}
@@ -55,29 +104,21 @@ export default function SignInScreen() {
         />
 
         <View style={styles.rowButtons}>
-          <Pressable
+                    <Pressable
             style={[styles.button, styles.buttonLight]}
-            onPress={() => router.push('/signup')}>
+            onPress={() => router.push('/register')}
+            disabled={isLoading}>
             <ThemedText style={styles.buttonText}>Sign Up</ThemedText>
           </Pressable>
           <Pressable 
-            style={[styles.button, styles.buttonPrimary]} 
-            onPress={ async () => {
-              try {
-                const result = await login({
-                  username: email,
-                  password: password
-                });
-
-                // Token automatically stored, user is now logged in
-                console.log('Login successful:', result);
-                router.replace('/(main_nav)/groups');
-
-              } catch (err) {
-                console.error('Login failed:', err);
-              }
-            }}>
-            <ThemedText style={[styles.buttonText, { color: '#fff' }]}>Log In</ThemedText>
+            style={[styles.button, styles.buttonPrimary, isLoading && styles.buttonDisabled]} 
+            onPress={handleLogin}
+            disabled={isLoading}>
+            {isLoading ? (
+              <ActivityIndicator color="#fff" />
+            ) : (
+              <ThemedText style={[styles.buttonText, { color: '#fff' }]}>Log In</ThemedText>
+            )}
           </Pressable>
         </View>
 
@@ -175,6 +216,10 @@ const styles = StyleSheet.create({
   },
   buttonPrimary: {
     backgroundColor: '#1a73e9',
+  },
+  buttonDisabled: {
+    backgroundColor: '#999',
+    opacity: 0.6,
   },
   buttonText: {
     color: '#fff',

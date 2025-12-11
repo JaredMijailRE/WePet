@@ -9,7 +9,7 @@ models.Base.metadata.create_all(bind=engine)
 
 app = FastAPI(root_path="/groups")
 
-# CORS middleware
+# CORS middleware MUST be added first (will be evaluated last in the chain)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],  # En producción, especifica los orígenes permitidos
