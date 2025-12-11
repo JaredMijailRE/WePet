@@ -1,7 +1,9 @@
 from sqlalchemy.orm import Session
+from typing import List
 from domain.repositories.user_repository import UserRepository
 from app.domain.entities.user import User as UserEntity
 from app.adapter.db.models import User as UserModel
+import uuid
 
 class SQLUserRepository(UserRepository):
 
@@ -30,6 +32,14 @@ class SQLUserRepository(UserRepository):
         
         return self._map_to_entity(new_user_db)
 
+    def find_by_id(self, user_id: uuid.UUID) -> UserEntity | None:
+        user_db = self.db.query(UserModel).filter(UserModel.id == user_id).first()
+        return self._map_to_entity(user_db) if user_db else None
+
+    def find_by_ids(self, user_ids: List[uuid.UUID]) -> List[UserEntity]:
+        users_db = self.db.query(UserModel).filter(UserModel.id.in_(user_ids)).all()
+        return [self._map_to_entity(user_db) for user_db in users_db]
+
     def _map_to_entity(self, user_db: UserModel) -> UserEntity:
         return UserEntity(
             id=user_db.id,
@@ -37,6 +47,8 @@ class SQLUserRepository(UserRepository):
             email=user_db.email,
             password_hash=user_db.password_hash,
             birth_date=user_db.birth_date,
-            is_active=True 
+            current_emotional_status=user_db.current_emotional_status,
+            its_sharing_location=user_db.its_sharing_location,
+            created_at=user_db.created_at
         )
     

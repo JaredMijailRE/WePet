@@ -8,6 +8,7 @@ import { useGroups, useGroupMembers } from '@/hooks';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Clipboard from 'expo-clipboard';
 import petService from '@/services/pet';
+import userService from '@/services/user';
 
 type PetStyle = 'dog' | 'cat' | 'dragon' | 'duck';
 
@@ -97,35 +98,66 @@ export default function GroupSettings() {
         return;
       }
       try {
+        console.log(`Loading members for group: ${groupId}`);
         // 1. Obtener lista de miembros del grupo (con IDs) usando useGroupMembers
         const groupMembers = await listGroupMembers(groupId as string);
-        
-        // 2. Para cada miembro, crear objeto Member
-        const memberDetails: Member[] = [];
+        console.log(`Found ${groupMembers?.length || 0} group members`);
+
+        // 2. Extraer user IDs de los miembros del grupo (deduplicados)
+        const userIdSet = new Set<string>();
+        const memberRoles: { [key: string]: string } = {};
+
         for (const gm of groupMembers || []) {
-          try {
-            const userId = (gm as any).user_id;
-            if (userId) {
-              memberDetails.push({
-                id: userId,
-                name: `User ${userId.slice(0, 6)}`,
-                role: (gm as any).role === 'admin' ? 'Administrator' : 'Member',
-                status: 'Member',
-              });
-            }
-          } catch (err) {
-            console.warn(`Error processing member ${(gm as any).user_id}:`, err);
+          const userId = (gm as any).user_id;
+          if (userId) {
+            userIdSet.add(userId);
+            memberRoles[userId] = (gm as any).role;
           }
         }
-        
-        setMembers(memberDetails);
+
+        const userIds = Array.from(userIdSet);
+
+        // 3. Si hay user IDs, obtener datos de usuarios usando el endpoint batch
+        if (userIds.length > 0) {
+          try {
+            console.log(`Fetching ${userIds.length} users using batch endpoint:`, userIds);
+            const users = await userService.getUsersByIds(userIds);
+            console.log(`Successfully fetched ${users.length} user details`);
+
+            // 4. Crear objetos Member con datos reales de usuarios
+            const memberDetails: Member[] = users.map(user => ({
+              id: user.id,
+              name: user.username, // Usar username real en lugar de placeholder
+              role: memberRoles[user.id] === 'admin' ? 'Administrator' : 'Member',
+              status: 'Member',
+            }));
+
+            setMembers(memberDetails);
+          } catch (userErr) {
+            console.warn('Error fetching user data with batch endpoint, falling back to placeholders. User IDs attempted:', userIds, 'Error:', userErr);
+
+            // Fallback: crear miembros con placeholders si falla la API de usuarios
+            const memberDetails: Member[] = userIds.map(userId => ({
+              id: userId,
+              name: `User ${userId.slice(0, 6)}`,
+              role: memberRoles[userId] === 'admin' ? 'Administrator' : 'Member',
+              status: 'Member',
+            }));
+
+            console.log(`Created ${memberDetails.length} members with placeholder names`);
+            setMembers(memberDetails);
+          }
+        } else {
+          setMembers([]);
+        }
       } catch (err) {
         console.error('Error loading group members:', err);
+        setMembers([]);
       }
     };
 
     loadMembers();
-  }, [groupId, listGroupMembers]);
+  }, [groupId]);
 
   const handleSaveGroup = async () => {
     if (!groupId) {

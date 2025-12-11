@@ -114,6 +114,16 @@ export interface UserResponseDTO {
   email: string;
 }
 
+export interface UserDTO {
+  id: string;
+  username: string;
+  email: string;
+  birth_date: string; // ISO date string
+  current_emotional_status?: string | null;
+  its_sharing_location: boolean;
+  created_at?: string | null; // ISO date string
+}
+
 // API Response types
 export interface ApiResponse<T> {
   data: T;
