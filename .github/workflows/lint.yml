@@ -38,7 +38,7 @@ jobs:
     strategy:
       matrix:
         project:
-          - PetManagment/app
+          - PetManagment
     name: Test ${{ matrix.project }}
 
     steps:
