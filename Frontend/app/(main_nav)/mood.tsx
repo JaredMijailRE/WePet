@@ -11,11 +11,15 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useSharing } from '@/hooks/useSharing';
 import { EmotionRestponseDTO } from '@/hooks/types';
+import { getUsersByIds } from '@/services/user';
 
-function mapBackendMembers(backendMembers: EmotionRestponseDTO[]): Group['members'] {
+function mapBackendMembers(
+  backendMembers: EmotionRestponseDTO[],
+  idToName?: Record<string, string>,
+): Group['members'] {
   return backendMembers.map((m, index) => ({
     id: m.user_id,
-    name: `User ${index + 1}`,
+    name: idToName?.[m.user_id] ?? `User ${index + 1}`,
     mood: m.emotion as MoodName,
   }));
 }
@@ -43,10 +47,30 @@ export default function MoodScreen() {
         const data = await getMoodsForUserGroups();
         // data: { group: GroupResponseDTO; moods: EmotionRestponseDTO[] }[]
 
+        // Recolectar IDs únicos de usuarios y obtener sus nombres
+        const uniqueIds = Array.from(
+          new Set(
+            data.flatMap(({ moods }) => moods.map((m) => m.user_id)),
+          ),
+        );
+
+        let idToName: Record<string, string> = {};
+        try {
+          if (uniqueIds.length) {
+            const users = await getUsersByIds(uniqueIds);
+            idToName = users.reduce<Record<string, string>>((acc, u) => {
+              acc[u.id] = u.username;
+              return acc;
+            }, {});
+          }
+        } catch (err) {
+          console.warn('No se pudieron obtener los nombres de usuario', err);
+        }
+
         const mappedGroups: Group[] = data.map(({ group, moods }) => ({
           id: group.id,
           name: group.name,
-          members: mapBackendMembers(moods),
+          members: mapBackendMembers(moods, idToName),
         }));
 
         setGroups(mappedGroups);
@@ -66,10 +90,31 @@ export default function MoodScreen() {
       await postMoodToUserGroups(mood);
 
       const data = await getMoodsForUserGroups();
+
+      // Recolectar IDs únicos de usuarios y obtener sus nombres
+      const uniqueIds = Array.from(
+        new Set(
+          data.flatMap(({ moods }) => moods.map((m) => m.user_id)),
+        ),
+      );
+
+      let idToName: Record<string, string> = {};
+      try {
+        if (uniqueIds.length) {
+          const users = await getUsersByIds(uniqueIds);
+          idToName = users.reduce<Record<string, string>>((acc, u) => {
+            acc[u.id] = u.username;
+            return acc;
+          }, {});
+        }
+      } catch (err) {
+        console.warn('No se pudieron obtener los nombres de usuario', err);
+      }
+
       const mappedGroups: Group[] = data.map(({ group, moods }) => ({
         id: group.id,
         name: group.name,
-        members: mapBackendMembers(moods),
+        members: mapBackendMembers(moods, idToName),
       }));
       setGroups(mappedGroups);
     } catch (e) {
