@@ -77,6 +77,29 @@ export default function GroupSettings() {
     load();
   }, [groupId]);
 
+  // Load group's pet style to render the assigned pet
+  useEffect(() => {
+    const loadPet = async () => {
+      if (!groupId) return;
+      try {
+        const pet = await getPetByGroup(groupId as string);
+        const raw = String(pet?.style || pet?.type || pet?.breed || '').toLowerCase();
+        const mapping: Record<string, PetStyle> = {
+          dog: 'dog', perro: 'dog',
+          cat: 'cat', gato: 'cat',
+          dragon: 'dragon',
+          duck: 'duck', pato: 'duck',
+        };
+        const resolved: PetStyle = mapping[raw] || 'dog';
+        setPetStyle(resolved);
+      } catch (err) {
+        console.error('Error loading pet for group:', err);
+        // keep default
+      }
+    };
+    loadPet();
+  }, [groupId]);
+
   
 
   // Group state
