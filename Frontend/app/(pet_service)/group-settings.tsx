@@ -8,6 +8,7 @@ import { useGroups, useGroupMembers } from '@/hooks';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Clipboard from 'expo-clipboard';
 import petService from '@/services/pet';
+import { getPetByGroup, updatePetName } from '@/services/pet';
 import userService from '@/services/user';
 
 type PetStyle = 'dog' | 'cat' | 'dragon' | 'duck';
@@ -22,7 +23,7 @@ interface Member {
 export default function GroupSettings() {
   const router = useRouter();
   const params = useLocalSearchParams();
-  const {getGroupInviteCode, getGroup, updateGroup, loading, error} = useGroups();
+  const {getGroupInviteCode, getGroup, updateGroup, deleteGroup, loading, error} = useGroups();
   const { listGroupMembers, getUserById, removeGroupMember } = useGroupMembers();
   const { groupId } = useLocalSearchParams<{ groupId: string }>();
 
@@ -87,7 +88,7 @@ export default function GroupSettings() {
 
   // Pet name editing state
   const [isEditingPetName, setIsEditingPetName] = useState(false);
-  const [newPetName, setNewPetName] = useState('');
+  const [newName, setNewPetName] = useState('');
   const [petId, setPetId] = useState<string | null>(null);
   const [isSavingPetName, setIsSavingPetName] = useState(false);
 
@@ -300,6 +301,29 @@ export default function GroupSettings() {
   };
 
   const handleDeleteGroup = () => {
+    if (Platform.OS === 'web' && typeof window !== 'undefined') {
+      const confirm = window.confirm('Are you sure you want to delete this group? This action cannot be undone.');
+      if (!confirm) return;
+      (async () => {
+        console.log('Delete confirmed (web)');
+        if (!groupId) {
+          window.alert('Error: no se pudo obtener el ID del grupo');
+          return;
+        }
+
+        try {
+          await deleteGroup(groupId as string);
+          window.alert('Grupo eliminado exitosamente');
+          router.push('/(main_nav)/groups');
+        } catch (err) {
+          console.error('Error deleting group:', err);
+          window.alert('Error: ' + ((err as any)?.message || 'No se pudo eliminar el grupo'));
+        }
+      })();
+      return;
+    }
+
+    // Native flow
     Alert.alert(
       'Delete Group',
       'Are you sure you want to delete this group? This action cannot be undone.',
@@ -308,7 +332,21 @@ export default function GroupSettings() {
         {
           text: 'Delete',
           onPress: () => {
-            router.push('/(main_nav)/groups');
+            (async () => {
+              if (!groupId) {
+                Alert.alert('Error', 'No se pudo obtener el ID del grupo');
+                return;
+              }
+
+              try {
+                await deleteGroup(groupId as string);
+                Alert.alert('Éxito', 'Grupo eliminado exitosamente');
+                router.push('/(main_nav)/groups');
+              } catch (err) {
+                console.error('Error deleting group:', err);
+                Alert.alert('Error', (err as any)?.message || 'No se pudo eliminar el grupo');
+              }
+            })();
           },
           style: 'destructive',
         },
@@ -317,7 +355,60 @@ export default function GroupSettings() {
   };
 
   const handleRemoveMember = (memberId: string) => {
-    setMembers(members.filter(m => m.id !== memberId));
+    const member = members.find(m => m.id === memberId);
+    const memberName = member?.name || 'this member';
+
+    if (Platform.OS === 'web' && typeof window !== 'undefined') {
+      const confirm = window.confirm(`Are you sure you want to remove ${memberName} from this group?`);
+      if (!confirm) return;
+      (async () => {
+        console.log('Remove member confirmed (web)');
+        if (!groupId) {
+          window.alert('Error: no se pudo obtener el ID del grupo');
+          return;
+        }
+
+        try {
+          await removeGroupMember(groupId as string, memberId);
+          setMembers((prev) => prev.filter((m) => m.id !== memberId));
+          window.alert(`${memberName} has been removed from the group`);
+        } catch (err) {
+          console.error('Error removing member:', err);
+          window.alert('Error: ' + ((err as any)?.message || 'No se pudo eliminar el miembro del grupo'));
+        }
+      })();
+      return;
+    }
+
+    // Native flow
+    Alert.alert(
+      'Remove Member',
+      `Are you sure you want to remove ${memberName} from this group?`,
+      [
+        { text: 'Cancel', onPress: () => {}, style: 'cancel' },
+        {
+          text: 'Remove',
+          onPress: () => {
+            (async () => {
+              if (!groupId) {
+                Alert.alert('Error', 'No se pudo obtener el ID del grupo');
+                return;
+              }
+
+              try {
+                await removeGroupMember(groupId as string, memberId);
+                setMembers((prev) => prev.filter((m) => m.id !== memberId));
+                Alert.alert('Éxito', `${memberName} ha sido eliminado del grupo`);
+              } catch (err) {
+                console.error('Error removing member:', err);
+                Alert.alert('Error', (err as any)?.message || 'No se pudo eliminar el miembro del grupo');
+              }
+            })();
+          },
+          style: 'destructive',
+        },
+      ]
+    );
   };
 
   const handleChangeName = async () => {
@@ -327,12 +418,16 @@ export default function GroupSettings() {
     }
 
     try {
-      const pet = await petService.getPetByGroup(groupId);
-      if (pet && pet.id) {
-        setPetId(pet.id);
+      const pet = await getPetByGroup(groupId);
+      console.log('Pet data received:', pet);
+      
+      if (pet && (pet.id || pet.pet_id)) {
+        const petId = pet.id || pet.pet_id;
+        setPetId(petId);
         setNewPetName(pet.name || '');
         setIsEditingPetName(true);
       } else {
+        console.error('Invalid pet response:', pet);
         Alert.alert('Mascota no encontrada', 'No hay una mascota en este grupo para cambiarle el nombre.');
       }
     } catch (err) {
@@ -350,7 +445,7 @@ export default function GroupSettings() {
 
     setIsSavingPetName(true);
     try {
-      await petService.updatePetName(petId, newPetName.trim());
+      await updatePetName(petId, newName);
       setIsEditingPetName(false);
       Alert.alert('Éxito', 'Nombre de la mascota actualizado');
     } catch (err) {
@@ -488,7 +583,7 @@ export default function GroupSettings() {
               style={styles.modalInput}
               placeholder="Enter pet name"
               placeholderTextColor="#999"
-              value={newPetName}
+              value={newName}
               onChangeText={setNewPetName}
               maxLength={30}
               editable={!isSavingPetName}

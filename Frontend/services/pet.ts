@@ -6,7 +6,7 @@ function buildUrl(path: string) {
 }
 
 export async function getPetByGroup(groupId: string) {
-  const url = buildUrl(`pet/group/${encodeURIComponent(groupId)}`);
+  const url = buildUrl(`/pet/pet/${encodeURIComponent(groupId)}`);
   const res = await fetch(url, { method: 'GET' });
   if (!res.ok) throw new Error(`Failed to fetch pet: ${res.status}`);
   return res.json();
@@ -39,7 +39,7 @@ export async function createPet(groupId: string, name: string, type: string) {
 }
 
 export async function updatePetName(petId: string, newName: string) {
-  const url = buildUrl(`/pet/${encodeURIComponent(petId)}`);
+  const url = buildUrl(`/pet/pet/${encodeURIComponent(petId)}`);
   const res = await fetch(url, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: newName }) });
   if (!res.ok) throw new Error(`Update pet name failed: ${res.status}`);
   return res.json();
