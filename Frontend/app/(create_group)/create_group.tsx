@@ -33,6 +33,7 @@ export default function CreateGroupPage() {
           console.log('Éxito en crear la mascota');
           router.push("/(main_nav)/groups");
         } catch (err) {
+          console.error('Error creating pet:', err);
           Alert.alert('Advertencia', 'El grupo se creó pero la mascota no pudo ser creada.');
           router.push("/(main_nav)/groups");
         }
