@@ -9,6 +9,7 @@ dependencies = [
     "fastapi>=0.121.1",
     "psycopg2-binary>=2.9.11",
     "pydantic[email]>=2.12.4",
+    "prometheus-fastapi-instrumentator>=7.0.0",
     "pyjwt>=2.10.1",
     "sqlalchemy>=2.0.44",
     "uvicorn>=0.38.0",

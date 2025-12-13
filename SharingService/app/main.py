@@ -1,5 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.trustedhost import TrustedHostMiddleware
+from prometheus_fastapi_instrumentator import Instrumentator
 from app.interface.http.routers import router
 from app.adapter.db.database import engine, SessionLocal
 from app.adapter.db import models
@@ -44,6 +45,7 @@ app.add_middleware(
     TrustedHostMiddleware, allowed_hosts=["*"]
 )
 
+Instrumentator().instrument(app).expose(app)
 app.include_router(router, tags=["Emotional Report"])
 
 
