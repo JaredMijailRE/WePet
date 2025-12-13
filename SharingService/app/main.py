@@ -30,7 +30,7 @@ def seed_emotions():
         db.close()
         
 seed_emotions()
-app = FastAPI(root_path="/sharing")
+app = FastAPI(root_path="/sharing", docs_url=None, redoc_url="/docs")
 
 # CORS middleware MUST be added first (will be evaluated last in the chain)
 app.add_middleware(

@@ -9,7 +9,7 @@ from app.adapter.db import models
 
 models.Base.metadata.create_all(bind=engine)
 
-app = FastAPI()
+app = FastAPI(root_path="/user", docs_url=None, redoc_url="/docs")
 
 # CORS middleware MUST be added first (will be evaluated last in the chain)
 app.add_middleware(

@@ -8,7 +8,7 @@ from app.adapter.db import models
 
 models.Base.metadata.create_all(bind=engine)
 
-app = FastAPI(root_path="/groups")
+app = FastAPI(root_path="/groups", docs_url=None, redoc_url="/docs")
 
 # CORS middleware MUST be added first (will be evaluated last in the chain)
 app.add_middleware(
