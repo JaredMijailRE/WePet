@@ -57,6 +57,7 @@ export default function RegisterScreen() {
   const [email, setEmail] = useState('');
   const [birthDate, setBirthDate] = useState('');
   const [password, setPassword] = useState('');
+  const [birthDateError, setBirthDateError] = useState<string | null>(null);
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -97,9 +98,33 @@ export default function RegisterScreen() {
 
   const allRequirementsMet = Object.values(validation).every((v) => v === true);
   const passwordsMatch = password === confirmPassword && password.length > 0;
-  const canContinue = allRequirementsMet && passwordsMatch && username && email && birthDate;
+  const canContinue = allRequirementsMet && passwordsMatch && username && email && birthDate && !birthDateError;
 
   const handleRegister = async () => {
+    // Validate birth date format and value (YYYY-MM-DD)
+    const isoRegex = /^\d{4}-\d{2}-\d{2}$/;
+    if (!isoRegex.test(birthDate)) {
+      setBirthDateError('Use format YYYY-MM-DD');
+      return;
+    }
+    const [y, m, d] = birthDate.split('-').map((n) => parseInt(n, 10));
+    const dt = new Date(birthDate + 'T00:00:00Z');
+    const valid =
+      dt instanceof Date && !isNaN(dt.getTime()) &&
+      dt.getUTCFullYear() === y && dt.getUTCMonth() + 1 === m && dt.getUTCDate() === d;
+    if (!valid) {
+      setBirthDateError('Invalid date');
+      return;
+    }
+    // Optional: basic age check (>= 13)
+    const today = new Date();
+    const min = new Date(Date.UTC(today.getUTCFullYear() - 13, today.getUTCMonth(), today.getUTCDate()));
+    if (dt > min) {
+      setBirthDateError('You must be at least 13 years old');
+      return;
+    }
+    setBirthDateError(null);
+
     if (canContinue) {
       try {
         const response = await fetch('http://localhost/user/auth/register', {
@@ -194,15 +219,23 @@ export default function RegisterScreen() {
         </View>
 
         {/* Birth Date Input */}
-        <View style={[styles.inputWrapper, { borderColor: birthDate ? '#007aff' : '#cccccc' }]}>
+        <View style={[styles.inputWrapper, { borderColor: birthDateError ? '#d32f2f' : (birthDate ? '#007aff' : '#cccccc') }]}>
           <TextInput
             style={[styles.passwordInput, { color: textColor, backgroundColor: inputBgColor }]}
             placeholder="Birth Date (YYYY-MM-DD)"
             placeholderTextColor="#999999"
             value={birthDate}
-            onChangeText={setBirthDate}
+            onChangeText={(text) => {
+              setBirthDate(text);
+              if (birthDateError) setBirthDateError(null);
+            }}
+            keyboardType="numbers-and-punctuation"
+            autoCapitalize="none"
           />
         </View>
+        {birthDateError ? (
+          <ThemedText style={styles.errorText}>{birthDateError}</ThemedText>
+        ) : null}
 
 
         {/* Password Input */}

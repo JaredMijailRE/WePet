@@ -145,10 +145,7 @@ export default function SignInScreen() {
           </Pressable>
         </View>
 
-        <ThemedText style={styles.terms}>
-          By clicking continue, you accept our <ThemedText style={{ fontWeight: '600' }}>Terms & Conditions</ThemedText> &{' '}
-          <ThemedText style={{ fontWeight: '600' }}>Privacy Policy</ThemedText>
-        </ThemedText>
+        
       </ThemedView>
     </ParallaxScrollView>
   );

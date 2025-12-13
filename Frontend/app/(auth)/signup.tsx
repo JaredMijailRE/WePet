@@ -8,6 +8,8 @@ import { ThemedView } from '@/components/themed-view';
 
 export default function SignUpScreen() {
   const [email, setEmail] = useState('');
+  const [birthDate, setBirthDate] = useState('');
+  const [birthDateError, setBirthDateError] = useState<string | null>(null);
   const [newsletter, setNewsletter] = useState(false);
   const router = useRouter();
 
@@ -47,6 +49,26 @@ export default function SignUpScreen() {
           <View style={styles.inputAccent} />
         </View>
 
+        {/* Birth date input */}
+        <View style={styles.inputContainer}>
+          <TextInput
+            value={birthDate}
+            onChangeText={(text) => {
+              setBirthDate(text);
+              if (birthDateError) setBirthDateError(null);
+            }}
+            placeholder="Birth date (YYYY-MM-DD)"
+            style={[styles.input, birthDateError ? styles.inputError : null]}
+            placeholderTextColor="#797979"
+            keyboardType="numbers-and-punctuation"
+            autoCapitalize="none"
+          />
+          <View style={styles.inputAccent} />
+          {birthDateError ? (
+            <ThemedText style={styles.errorText}>{birthDateError}</ThemedText>
+          ) : null}
+        </View>
+
         <View style={styles.checkboxRow}>
           <Pressable
             style={[styles.checkbox, newsletter && styles.checkboxChecked]}
@@ -58,7 +80,35 @@ export default function SignUpScreen() {
           </ThemedText>
         </View>
 
-        <Pressable style={styles.continueBtn} onPress={() => router.push('/verify')}>
+        <Pressable
+          style={styles.continueBtn}
+          onPress={() => {
+            // Validate birth date format and value (YYYY-MM-DD)
+            const isoRegex = /^\d{4}-\d{2}-\d{2}$/;
+            if (!isoRegex.test(birthDate)) {
+              setBirthDateError('Use format YYYY-MM-DD');
+              return;
+            }
+            const [y, m, d] = birthDate.split('-').map((n) => parseInt(n, 10));
+            const dt = new Date(birthDate + 'T00:00:00Z');
+            const valid =
+              dt instanceof Date && !isNaN(dt.getTime()) &&
+              dt.getUTCFullYear() === y && dt.getUTCMonth() + 1 === m && dt.getUTCDate() === d;
+            if (!valid) {
+              setBirthDateError('Invalid date');
+              return;
+            }
+            // Optional: basic age check (>= 13)
+            const today = new Date();
+            const min = new Date(Date.UTC(today.getUTCFullYear() - 13, today.getUTCMonth(), today.getUTCDate()));
+            if (dt > min) {
+              setBirthDateError('You must be at least 13 years old');
+              return;
+            }
+            setBirthDateError(null);
+            router.push('/verify');
+          }}
+        >
           <ThemedText type="defaultSemiBold" style={styles.continueText}>
             Continue
           </ThemedText>
@@ -120,6 +170,15 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: '#007aff',
     color: '#1a1c29',
+  },
+  inputError: {
+    borderColor: '#d32f2f',
+  },
+  errorText: {
+    color: '#d32f2f',
+    marginTop: 8,
+    marginLeft: 8,
+    fontSize: 12,
   },
   inputAccent: {
     position: 'absolute',
