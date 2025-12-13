@@ -1,5 +1,4 @@
 from fastapi import FastAPI
-from contextlib import asynccontextmanager
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.trustedhost import TrustedHostMiddleware
 from prometheus_fastapi_instrumentator import Instrumentator
