@@ -1,0 +1,24 @@
+global:
+  scrape_interval: 5s
+
+scrape_configs:
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+
+  - job_name: 'user-managment'
+    static_configs:
+      - targets: ['user-managment:80']
+
+  - job_name: 'sharing-service'
+    static_configs:
+      - targets: ['sharing-service:80']
+
+  - job_name: 'pet-managment'
+    static_configs:
+      - targets: ['pet-managment:80']
+
+  - job_name: 'group-managment'
+    static_configs:
+      - targets: ['group-managment:80']
+
