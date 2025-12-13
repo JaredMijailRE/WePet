@@ -1,11 +1,12 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { StyleSheet, View, Pressable, Image, Text, SafeAreaView, Animated, Easing } from 'react-native';
-import { useRouter, useLocalSearchParams, Stack } from 'expo-router';
+import { useRouter, useLocalSearchParams, Stack, useFocusEffect } from 'expo-router';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { PetStyler } from '@/components/pet-styler';
 import petService from '@/services/pet';
 import Svg, { Circle } from 'react-native-svg';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 type PetStyle = 'dog' | 'cat' | 'dragon' | 'duck';
 
@@ -122,6 +123,7 @@ export default function PetScreen() {
   const router = useRouter();
   const params = useLocalSearchParams();
   const groupId = (params.groupId as string) ?? 'unknown';
+  const STORAGE_KEY = useMemo(() => `pet_state_${groupId}`, [groupId]);
 
   // pet state (fetched from backend)
   const [pet, setPet] = useState<any | null>(null);
@@ -130,9 +132,9 @@ export default function PetScreen() {
   const decayTimerRef = useRef<NodeJS.Timer | null>(null);
   // configurable decay rates per hour
   const decayPerHour = useMemo(() => ({
-    food: 8,    // percent per hour
-    clean: 6,
-    life: 4,
+    hunger: 8,    // percent per hour (hunger_level)
+    hygiene: 6,   // hygiene_level
+    health: 4,    // health_level
   }), []);
   // tick interval in ms
   const decayTickMs = 60 * 1000; // 1 minute granularity
@@ -171,8 +173,18 @@ export default function PetScreen() {
     async function load() {
       setLoading(true);
       try {
+        // Always load from backend - backend calculates decay automatically
         const data = await petService.getPetByGroup(groupId);
-        if (mounted) setPet(data);
+        if (!mounted) return;
+        setPet(data);
+        // Update AsyncStorage with backend values
+        await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify({
+          hunger_level: data.hunger_level,
+          hygiene_level: data.hygiene_level,
+          health_level: data.health_level,
+          happiness_level: data.happiness_level,
+          lastUpdated: Date.now(),
+        }));
       } catch (e) {
         console.error("Failed to fetch pet:", e);
       } finally {
@@ -181,9 +193,10 @@ export default function PetScreen() {
     }
     load();
     return () => { mounted = false; };
-  }, [groupId]);
+  }, [groupId, STORAGE_KEY]);
 
   // Decay effect: decreases stats smoothly over time while screen is mounted
+  // Also syncs with backend every 5 minutes
   useEffect(() => {
     // clear any previous timer
     if (decayTimerRef.current) {
@@ -194,22 +207,59 @@ export default function PetScreen() {
     if (!pet) return;
 
     const perMinute = {
-      food: decayPerHour.food / 30,
-      clean: decayPerHour.clean / 30,
-      life: decayPerHour.life / 30,
+      hunger: decayPerHour.hunger / 10,
+      hygiene: decayPerHour.hygiene / 10,
+      health: decayPerHour.health / 10,
     };
 
+    let syncCounter = 0;
+    const SYNC_INTERVAL = 5; // Sync with backend every 5 minutes
+
     decayTimerRef.current = setInterval(() => {
+      let snapshot: any = null;
       setPet((prev: any) => {
         if (!prev) return prev;
         const next = {
           ...prev,
-          food: Math.max(0, (prev.food ?? 0) - perMinute.food),
-          clean: Math.max(0, (prev.clean ?? 0) - perMinute.clean),
-          life: Math.max(0, (prev.life ?? 0) - perMinute.life),
+          hunger_level: Math.max(0, (prev.hunger_level ?? 0) - perMinute.hunger),
+          hygiene_level: Math.max(0, (prev.hygiene_level ?? 0) - perMinute.hygiene),
+          health_level: Math.max(0, (prev.health_level ?? 0) - perMinute.health),
         };
+        snapshot = next;
         return next;
       });
+      if (snapshot) {
+        AsyncStorage.setItem(STORAGE_KEY, JSON.stringify({
+          hunger_level: snapshot.hunger_level,
+          hygiene_level: snapshot.hygiene_level,
+          health_level: snapshot.health_level,
+          happiness_level: snapshot.happiness_level,
+          lastUpdated: Date.now(),
+        })).catch(() => {});
+
+        // Sync with backend every SYNC_INTERVAL minutes
+        syncCounter++;
+        if (syncCounter >= SYNC_INTERVAL) {
+          syncCounter = 0;
+          petService.updatePetStatsByGroup(groupId, {
+            hunger_level: snapshot.hunger_level,
+            hygiene_level: snapshot.hygiene_level,
+            health_level: snapshot.health_level,
+            happiness_level: snapshot.happiness_level,
+          }).then((updated) => {
+            setPet(updated);
+            AsyncStorage.setItem(STORAGE_KEY, JSON.stringify({
+              hunger_level: updated.hunger_level,
+              hygiene_level: updated.hygiene_level,
+              health_level: updated.health_level,
+              happiness_level: updated.happiness_level,
+              lastUpdated: Date.now(),
+            })).catch(() => {});
+          }).catch((e) => {
+            console.warn('Failed to sync pet stats with backend:', e);
+          });
+        }
+      }
     }, decayTickMs) as unknown as NodeJS.Timer;
 
     return () => {
@@ -217,8 +267,51 @@ export default function PetScreen() {
         clearInterval(decayTimerRef.current as unknown as number);
         decayTimerRef.current = null;
       }
+      // Sync with backend on unmount
+      if (pet) {
+        petService.updatePetStatsByGroup(groupId, {
+          hunger_level: pet.hunger_level,
+          hygiene_level: pet.hygiene_level,
+          health_level: pet.health_level,
+          happiness_level: pet.happiness_level,
+        }).then(() => {
+          console.debug('Pet stats synced with backend on unmount');
+        }).catch((e) => {
+          console.warn('Failed to sync pet stats with backend on unmount:', e);
+        });
+        AsyncStorage.setItem(STORAGE_KEY, JSON.stringify({
+          hunger_level: pet.hunger_level,
+          hygiene_level: pet.hygiene_level,
+          health_level: pet.health_level,
+          happiness_level: pet.happiness_level,
+          lastUpdated: Date.now(),
+        })).catch(() => {});
+      }
     };
-  }, [pet?.id, decayPerHour.food, decayPerHour.clean, decayPerHour.life]);
+  }, [pet?.id, groupId, decayPerHour.hunger, decayPerHour.hygiene, decayPerHour.health, STORAGE_KEY]);
+
+  // Reload from backend when screen is focused (when navigating back)
+  useFocusEffect(
+    useCallback(() => {
+      (async () => {
+        try {
+          // Always reload from backend to get the latest values with decay calculated
+          const data = await petService.getPetByGroup(groupId);
+          setPet(data);
+          await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify({
+            hunger_level: data.hunger_level,
+            hygiene_level: data.hygiene_level,
+            health_level: data.health_level,
+            happiness_level: data.happiness_level,
+            lastUpdated: Date.now(),
+          }));
+        } catch (e) {
+          console.error('Failed to reload pet on focus:', e);
+        }
+      })();
+      return () => {};
+    }, [groupId, STORAGE_KEY])
+  );
 
   return (
     <ThemedView style={styles.container}>
@@ -276,28 +369,28 @@ export default function PetScreen() {
           {/* Food */}
           <View style={styles.progressIndicatorWrapper}>
             <View style={styles.progressCircleWrapper}>
-              <CircleProgress size={75} strokeWidth={5} color="#ffd166" bgColor="rgba(0,0,0,0.08)" value={Math.round(pet?.food ?? 0)} />
+              <CircleProgress size={75} strokeWidth={5} color="#ffd166" bgColor="rgba(0,0,0,0.08)" value={Math.round(pet?.hunger_level ?? 0)} />
               <Text style={styles.progressIcon}>🍗</Text>
             </View>
-            <ThemedText style={styles.progressValue}>{Math.round(pet?.food ?? 0)}%</ThemedText>
+            <ThemedText style={styles.progressValue}>{Math.round(pet?.hunger_level ?? 0)}%</ThemedText>
           </View>
 
           {/* Life */}
           <View style={styles.progressIndicatorWrapper}>
             <View style={styles.progressCircleWrapper}>
-              <CircleProgress size={75} strokeWidth={5} color="#ff6b6b" bgColor="rgba(0,0,0,0.08)" value={Math.round(pet?.life ?? 0)} />
+              <CircleProgress size={75} strokeWidth={5} color="#ff6b6b" bgColor="rgba(0,0,0,0.08)" value={Math.round(pet?.health_level ?? 0)} />
               <Text style={styles.progressIcon}>❤️</Text>
             </View>
-            <ThemedText style={styles.progressValue}>{Math.round(pet?.life ?? 0)}%</ThemedText>
+            <ThemedText style={styles.progressValue}>{Math.round(pet?.health_level ?? 0)}%</ThemedText>
           </View>
 
           {/* Clean */}
           <View style={styles.progressIndicatorWrapper}>
             <View style={styles.progressCircleWrapper}>
-              <CircleProgress size={75} strokeWidth={5} color="#74c0fc" bgColor="rgba(0,0,0,0.08)" value={Math.round(pet?.clean ?? 0)} />
+              <CircleProgress size={75} strokeWidth={5} color="#74c0fc" bgColor="rgba(0,0,0,0.08)" value={Math.round(pet?.hygiene_level ?? 0)} />
               <Text style={styles.progressIcon}>🧼</Text>
             </View>
-            <ThemedText style={styles.progressValue}>{Math.round(pet?.clean ?? 0)}%</ThemedText>
+            <ThemedText style={styles.progressValue}>{Math.round(pet?.hygiene_level ?? 0)}%</ThemedText>
           </View>
         </View>
         
@@ -305,38 +398,99 @@ export default function PetScreen() {
         <View style={styles.actionsRow}>
           <Pressable style={({ pressed }) => [styles.actionBtn, pressed && styles.actionBtnPressed]} onPress={async () => { spawnParticles('food');
             if (!pet) return;
-            // optimistic local update for snappy UI
-            setPet((p:any) => ({ ...p, food: Math.min(100, (p?.food ?? 0) + 15) }));
+            let optimistic: any = null;
+            setPet((p:any) => {
+              const next = { ...p, hunger_level: Math.min(100, (p?.hunger_level ?? 0) + 10) };
+              optimistic = next;
+              return next;
+            });
+            if (optimistic) {
+              AsyncStorage.setItem(STORAGE_KEY, JSON.stringify({
+                hunger_level: optimistic.hunger_level,
+                hygiene_level: optimistic.hygiene_level,
+                health_level: optimistic.health_level,
+                happiness_level: optimistic.happiness_level,
+                lastUpdated: Date.now(),
+              })).catch(() => {});
+            }
             try {
-              const updated = await petService.performPetAction(pet.id, 'feed');
+              const updated = await petService.performPetAction(groupId, 'feed');
               setPet(updated);
+              await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify({
+                hunger_level: updated.hunger_level,
+                hygiene_level: updated.hygiene_level,
+                health_level: updated.health_level,
+                happiness_level: updated.happiness_level,
+                lastUpdated: Date.now(),
+              }));
             } catch (e) {
-              // keep optimistic value if backend fails
-              console.warn('Feed action failed, kept optimistic state', e);
+              console.warn('Feed action request failed or not supported', e);
             }
           }}>
             <ThemedText>Feed</ThemedText>
           </Pressable>
           <Pressable style={({ pressed }) => [styles.actionBtn, pressed && styles.actionBtnPressed]} onPress={async () => { spawnParticles('clean');
             if (!pet) return;
-            setPet((p:any) => ({ ...p, clean: Math.min(100, (p?.clean ?? 0) + 20) }));
+            let optimistic: any = null;
+            setPet((p:any) => {
+              const next = { ...p, hygiene_level: Math.min(100, (p?.hygiene_level ?? 0) + 10) };
+              optimistic = next;
+              return next;
+            });
+            if (optimistic) {
+              AsyncStorage.setItem(STORAGE_KEY, JSON.stringify({
+                hunger_level: optimistic.hunger_level,
+                hygiene_level: optimistic.hygiene_level,
+                health_level: optimistic.health_level,
+                happiness_level: optimistic.happiness_level,
+                lastUpdated: Date.now(),
+              })).catch(() => {});
+            }
             try {
-              const updated = await petService.performPetAction(pet.id, 'clean');
+              const updated = await petService.performPetAction(groupId, 'clean');
               setPet(updated);
+              await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify({
+                hunger_level: updated.hunger_level,
+                hygiene_level: updated.hygiene_level,
+                health_level: updated.health_level,
+                happiness_level: updated.happiness_level,
+                lastUpdated: Date.now(),
+              }));
             } catch (e) {
-              console.warn('Clean action failed, kept optimistic state', e);
+              console.warn('Clean action request failed or not supported', e);
             }
           }}>
             <ThemedText>Clean</ThemedText>
           </Pressable>
           <Pressable style={({ pressed }) => [styles.actionBtn, pressed && styles.actionBtnPressed]} onPress={async () => { spawnParticles('life');
             if (!pet) return;
-            setPet((p:any) => ({ ...p, life: Math.min(100, (p?.life ?? 0) + 8), happiness: Math.min(100, (p?.happiness ?? 0) + 15) }));
+            let optimistic: any = null;
+            setPet((p:any) => {
+              const next = { ...p, health_level: Math.min(100, (p?.health_level ?? 0) + 5), happiness_level: Math.min(100, (p?.happiness_level ?? 0) + 10) };
+              optimistic = next;
+              return next;
+            });
+            if (optimistic) {
+              AsyncStorage.setItem(STORAGE_KEY, JSON.stringify({
+                hunger_level: optimistic.hunger_level,
+                hygiene_level: optimistic.hygiene_level,
+                health_level: optimistic.health_level,
+                happiness_level: optimistic.happiness_level,
+                lastUpdated: Date.now(),
+              })).catch(() => {});
+            }
             try {
-              const updated = await petService.performPetAction(pet.id, 'play');
+              const updated = await petService.performPetAction(groupId, 'play');
               setPet(updated);
+              await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify({
+                hunger_level: updated.hunger_level,
+                hygiene_level: updated.hygiene_level,
+                health_level: updated.health_level,
+                happiness_level: updated.happiness_level,
+                lastUpdated: Date.now(),
+              }));
             } catch (e) {
-              console.warn('Play action failed, kept optimistic state', e);
+              console.warn('Play action request failed or not supported', e);
             }
           }}>
             <ThemedText>Play</ThemedText>

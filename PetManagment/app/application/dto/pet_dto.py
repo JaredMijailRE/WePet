@@ -20,3 +20,9 @@ class PetResponseDTO(BaseModel):
 
 class PetNameUpdateDTO(BaseModel):
     name: str
+
+class PetStatsUpdateDTO(BaseModel):
+    hunger_level: int = None
+    hygiene_level: int = None
+    health_level: int = None
+    happiness_level: int = None

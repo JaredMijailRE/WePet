@@ -24,11 +24,16 @@ class Pet:
     created_at: datetime = datetime.now()
 
     def feed(self):
-        self.hunger_level = min(100, self.hunger_level + 20)
+        self.hunger_level = min(100, self.hunger_level + 10)
         self.gain_xp(10)
 
     def clean(self):
-        self.hygiene_level = min(100, self.hygiene_level + 20)
+        self.hygiene_level = min(100, self.hygiene_level + 10)
+        self.gain_xp(10)
+
+    def play(self):
+        self.happiness_level = min(100, self.happiness_level + 10)
+        self.health_level = min(100, self.health_level + 5)
         self.gain_xp(10)
 
     def update_name(self, new_name: str):
