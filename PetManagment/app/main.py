@@ -7,12 +7,17 @@ from app.adapter.db.database import engine
 from app.adapter.db import models
 
 models.Base.metadata.create_all(bind=engine)
-app = FastAPI(root_path="/pet", docs_url=None, redoc_url="/docs")
+app = FastAPI(docs_url=None, redoc_url="/docs")
+
+# Health check
+@app.get("/")
+def health_check():
+    return {"status": "ok"}
 
 # CORS middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:8081", "*"],  # En producción, especifica los orígenes permitidos
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -21,4 +26,4 @@ app.add_middleware(
 app.add_middleware(TrustedHostMiddleware, allowed_hosts=["*"])
 
 Instrumentator().instrument(app).expose(app)
-app.include_router(router, tags=["Pets"])
+app.include_router(router, prefix="/pet", tags=["Pets"])

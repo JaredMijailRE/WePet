@@ -9,7 +9,11 @@ from app.adapter.db import models
 
 models.Base.metadata.create_all(bind=engine)
 
-app = FastAPI(root_path="/user", docs_url=None, redoc_url="/docs")
+app = FastAPI(docs_url=None, redoc_url="/docs")
+
+@app.get("/")
+def health_check():
+    return {"status": "ok"}
 
 # CORS middleware MUST be added first (will be evaluated last in the chain)
 app.add_middleware(

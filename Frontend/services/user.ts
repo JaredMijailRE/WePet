@@ -2,7 +2,7 @@ import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { UserDTO } from '../hooks/types';
 
-const API_BASE_URL = 'http://localhost/user'; // Adjust this to your backend URL
+const API_BASE_URL = process.env.EXPO_PUBLIC_USER_API_URL ?? 'http://localhost/user';
 
 const axiosInstance = axios.create({
   baseURL: API_BASE_URL,

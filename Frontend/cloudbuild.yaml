@@ -1,0 +1,10 @@
+steps:
+  - name: 'gcr.io/cloud-builders/docker'
+    args: [ 'build', '-t', 'gcr.io/rugged-weaver-481200-f9/frontend', 
+            '--build-arg', 'EXPO_PUBLIC_PET_API_URL=https://pet-service-ku26kd4uoa-uc.a.run.app/pet', 
+            '--build-arg', 'EXPO_PUBLIC_USER_API_URL=https://user-service-ku26kd4uoa-uc.a.run.app/user',
+            '.' ]
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['push', 'gcr.io/rugged-weaver-481200-f9/frontend']
+images:
+  - 'gcr.io/rugged-weaver-481200-f9/frontend'

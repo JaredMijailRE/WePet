@@ -1,4 +1,6 @@
 /.venv
 .ruff_cache
 .env
-__pycache__
+__pycache__gcloud-key.json
+gcloud-key.json
+*__pycache__
